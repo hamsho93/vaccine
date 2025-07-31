@@ -1,0 +1,83 @@
+# Overview
+
+This is a medical vaccine history parsing application that helps healthcare professionals analyze and standardize unstructured vaccine records. The application uses AI (OpenAI GPT-4o) to parse free-form vaccine history text and convert it into structured, CDC-compliant data for easy analysis and record-keeping.
+
+The system is built as a full-stack web application with a React frontend for data input and visualization, and a Node.js/Express backend that handles the AI parsing logic. It's designed specifically for medical professionals who need to quickly process and standardize vaccine histories from various sources.
+
+# User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+# System Architecture
+
+## Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **UI Library**: shadcn/ui components built on Radix UI primitives
+- **Styling**: Tailwind CSS with custom medical theme colors
+- **State Management**: React Hook Form for form handling, TanStack Query for server state
+- **Routing**: Wouter for lightweight client-side routing
+- **Build Tool**: Vite with custom alias configuration
+
+## Backend Architecture
+- **Runtime**: Node.js with Express.js framework
+- **Language**: TypeScript with ESM modules
+- **API Design**: RESTful API with structured error handling
+- **Service Layer**: Modular service architecture with VaccineParserService handling AI integration
+
+## Data Management
+- **Database**: PostgreSQL with Drizzle ORM (configured but minimal usage in current implementation)
+- **Schema Validation**: Zod for runtime type checking and API validation
+- **Data Structure**: Shared TypeScript types between frontend and backend via shared schema
+
+## AI Integration
+- **Provider**: OpenAI GPT-4o for natural language processing
+- **Purpose**: Parsing unstructured vaccine history text into standardized CDC-compliant format
+- **Output Format**: Structured JSON with patient info, vaccine records, doses, and completion status
+
+## Authentication & Session Management
+- **Storage**: In-memory storage with session handling via connect-pg-simple
+- **User Management**: Basic user model with username-based identification
+
+## Development Environment
+- **Hot Reload**: Vite dev server with HMR for frontend development
+- **Error Handling**: Runtime error overlay and structured API error responses
+- **Logging**: Custom request/response logging middleware for API endpoints
+
+## Key Design Patterns
+- **Separation of Concerns**: Clear separation between frontend UI, backend services, and shared types
+- **Type Safety**: End-to-end TypeScript with shared schema validation
+- **Component Architecture**: Modular UI components with consistent styling via design system
+- **Error Boundaries**: Comprehensive error handling at both API and UI levels
+
+# External Dependencies
+
+## Core AI Service
+- **OpenAI API**: GPT-4o model for parsing vaccine history text into structured data
+- **Environment**: Requires OPENAI_API_KEY environment variable
+
+## Database Services  
+- **PostgreSQL**: Primary database (via DATABASE_URL environment variable)
+- **Neon Database**: Serverless PostgreSQL driver for cloud deployment
+- **Drizzle**: Type-safe ORM with migration support
+
+## UI & Styling
+- **Radix UI**: Comprehensive set of accessible UI primitives
+- **Tailwind CSS**: Utility-first CSS framework with custom medical theme
+- **Lucide Icons**: Icon library for consistent iconography
+
+## Development & Build Tools
+- **Vite**: Frontend build tool and dev server
+- **TypeScript**: Type checking and compilation
+- **ESBuild**: Backend bundling for production builds
+
+## Form & Data Handling
+- **React Hook Form**: Form state management and validation
+- **TanStack Query**: Server state management and caching
+- **Zod**: Runtime schema validation and type inference
+
+## Session & Storage
+- **connect-pg-simple**: PostgreSQL session store for Express sessions
+- **crypto**: Node.js built-in for generating user IDs
+
+## Deployment Platform
+- **Replit**: Development and hosting platform with specialized Vite plugins for the Replit environment
