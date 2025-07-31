@@ -11,12 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ParseVaccineHistoryRequest, VaccineHistoryResult } from "@shared/schema";
-import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User } from "lucide-react";
+import { ParseVaccineHistoryRequest, VaccineHistoryResult, CatchUpRequest, CatchUpResult } from "@shared/schema";
+import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw } from "lucide-react";
 
 export default function VaccineParser() {
   const [result, setResult] = useState<VaccineHistoryResult | null>(null);
+  const [catchUpResult, setCatchUpResult] = useState<CatchUpResult | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showCatchUp, setShowCatchUp] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<ParseVaccineHistoryRequest>({
@@ -49,9 +51,54 @@ export default function VaccineParser() {
     },
   });
 
+  const catchUpMutation = useMutation({
+    mutationFn: async (data: CatchUpRequest) => {
+      const response = await apiRequest("POST", "/api/vaccine-catchup", data);
+      return await response.json();
+    },
+    onSuccess: (data: CatchUpResult) => {
+      setCatchUpResult(data);
+      toast({
+        title: "Catch-up recommendations generated",
+        description: `Generated recommendations for ${data.recommendations.length} vaccines`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Catch-up analysis failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: ParseVaccineHistoryRequest) => {
     setCurrentStep(2);
     parseVaccinesMutation.mutate(data);
+  };
+
+  const generateCatchUpRecommendations = () => {
+    if (!result || !result.patientInfo.dateOfBirth) {
+      toast({
+        title: "Date of birth required",
+        description: "Cannot generate catch-up recommendations without patient's date of birth",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const catchUpRequest: CatchUpRequest = {
+      birthDate: result.patientInfo.dateOfBirth,
+      currentDate: new Date().toISOString().split('T')[0],
+      vaccineHistory: result.vaccines.map(vaccine => ({
+        vaccineName: vaccine.standardName,
+        doses: vaccine.doses.map(dose => ({
+          date: dose.date
+        }))
+      }))
+    };
+
+    catchUpMutation.mutate(catchUpRequest);
   };
 
   const exportData = (format: 'json' | 'csv') => {
@@ -275,6 +322,19 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={generateCatchUpRecommendations}
+                    disabled={catchUpMutation.isPending || !result.patientInfo.dateOfBirth}
+                  >
+                    {catchUpMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Target className="mr-2 h-4 w-4" />
+                    )}
+                    Generate Catch-Up Plan
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => exportData('json')}
                   >
                     <Download className="mr-2 h-4 w-4" />
@@ -398,6 +458,79 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                   </AlertDescription>
                 </Alert>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Catch-Up Recommendations Section */}
+        {catchUpResult && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Target className="text-blue-600 mr-2" />
+                CDC Catch-Up Immunization Recommendations
+              </CardTitle>
+              <p className="text-sm text-slate-600">
+                Based on patient age ({catchUpResult.patientAge}) and current vaccine history
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {catchUpResult.recommendations.map((rec, index) => (
+                  <div key={index} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-gray-900">{rec.vaccineName}</h4>
+                      <Badge 
+                        variant={rec.seriesComplete ? 'default' : 'secondary'}
+                        className={rec.seriesComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'}
+                      >
+                        {rec.seriesComplete ? 'Complete' : 'Action Needed'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="text-sm text-gray-700 mb-3">
+                      <div className="font-medium mb-1">Recommendation:</div>
+                      <div>{rec.recommendation}</div>
+                    </div>
+
+                    {rec.nextDoseDate && (
+                      <div className="text-sm text-blue-600 mb-2 flex items-center">
+                        <Calendar className="mr-1 h-4 w-4" />
+                        Next dose due: {rec.nextDoseDate}
+                      </div>
+                    )}
+
+                    {rec.notes.length > 0 && (
+                      <div className="text-xs text-slate-600 bg-slate-50 rounded p-2">
+                        <div className="font-medium mb-1">Notes:</div>
+                        <ul className="list-disc pl-4 space-y-0.5">
+                          {rec.notes.map((note, noteIndex) => (
+                            <li key={noteIndex}>{note}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center mb-2">
+                  <Info className="text-blue-600 mr-2 h-4 w-4" />
+                  <span className="font-medium text-blue-900">Important Catch-Up Guidelines</span>
+                </div>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Minimum intervals between doses must be maintained</li>
+                  <li>• Some vaccines have maximum age limits or special considerations</li>
+                  <li>• Always consult CDC catch-up schedule for complex cases</li>
+                  <li>• Consider individual patient factors and contraindications</li>
+                </ul>
+              </div>
+
+              <div className="mt-4 text-xs text-slate-600 flex items-center justify-between">
+                <span>CDC Guidelines Version: {catchUpResult.cdcVersion}</span>
+                <span>Generated: {new Date(catchUpResult.processedAt).toLocaleString()}</span>
+              </div>
             </CardContent>
           </Card>
         )}

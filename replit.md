@@ -1,8 +1,8 @@
 # Overview
 
-This is a medical vaccine history parsing application that helps healthcare professionals analyze and standardize unstructured vaccine records. The application uses AI (OpenAI GPT-4o) to parse free-form vaccine history text and convert it into structured, CDC-compliant data for easy analysis and record-keeping.
+This is a comprehensive medical vaccine history parsing and catch-up planning application that helps healthcare professionals analyze unstructured vaccine records and generate CDC-compliant catch-up immunization recommendations. The application uses AI (OpenAI GPT-4o) to parse free-form vaccine history text and convert it into structured data, then applies CDC catch-up immunization schedule rules to determine what vaccines a patient needs next.
 
-The system is built as a full-stack web application with a React frontend for data input and visualization, and a Node.js/Express backend that handles the AI parsing logic. It's designed specifically for medical professionals who need to quickly process and standardize vaccine histories from various sources.
+The system is built as a full-stack web application with a React frontend for data input and visualization, and a Node.js/Express backend that handles both AI parsing logic and catch-up recommendation calculations. It's designed specifically for medical professionals who need to quickly process vaccine histories and generate catch-up plans based on current CDC guidelines (2025.1).
 
 # User Preferences
 
@@ -22,7 +22,9 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js framework
 - **Language**: TypeScript with ESM modules
 - **API Design**: RESTful API with structured error handling
-- **Service Layer**: Modular service architecture with VaccineParserService handling AI integration
+- **Service Layer**: Modular service architecture with:
+  - VaccineParserService: AI-powered text parsing using OpenAI GPT-4o
+  - VaccineCatchUpService: CDC catch-up immunization schedule calculations
 
 ## Data Management
 - **Database**: PostgreSQL with Drizzle ORM (configured but minimal usage in current implementation)
@@ -33,6 +35,12 @@ Preferred communication style: Simple, everyday language.
 - **Provider**: OpenAI GPT-4o for natural language processing
 - **Purpose**: Parsing unstructured vaccine history text into standardized CDC-compliant format
 - **Output Format**: Structured JSON with patient info, vaccine records, doses, and completion status
+
+## Catch-Up Recommendation Engine
+- **CDC Guidelines**: Based on 2025.1 CDC catch-up immunization schedule
+- **Coverage**: All standard vaccines (HepB, Rotavirus, DTaP, Hib, PCV, IPV, COVID-19, Influenza, MMR, VAR, HepA, Tdap, HPV, MenACWY, MenB)
+- **Logic**: Calculates minimum intervals, age requirements, and maximum age limits
+- **Output**: Specific recommendations with next dose dates and clinical notes
 
 ## Authentication & Session Management
 - **Storage**: In-memory storage with session handling via connect-pg-simple

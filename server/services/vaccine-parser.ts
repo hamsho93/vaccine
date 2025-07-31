@@ -81,6 +81,11 @@ Important parsing rules:
       
       // Validate the structure matches our schema
       const result = VaccineHistoryResult.parse(parsed);
+      
+      // Ensure timestamp is properly formatted
+      result.processedAt = new Date().toISOString();
+      result.cdcVersion = "2025.1";
+      
       return result;
 
     } catch (error) {
