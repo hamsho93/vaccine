@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { pgTable, serial, text, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 
 export const VaccineDose = z.object({
   date: z.string(), // ISO date string
@@ -65,3 +67,50 @@ export type ParseVaccineHistoryRequest = z.infer<typeof ParseVaccineHistoryReque
 export type VaccineRecommendation = z.infer<typeof VaccineRecommendation>;
 export type CatchUpRequest = z.infer<typeof CatchUpRequest>;
 export type CatchUpResult = z.infer<typeof CatchUpResult>;
+
+// Database Tables
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const vaccineHistoryRecords = pgTable("vaccine_history_records", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  sessionId: text("session_id").notNull(), // For anonymous sessions
+  rawData: text("raw_data").notNull(),
+  structuredData: jsonb("structured_data").notNull(),
+  processingNotes: text("processing_notes").array(),
+  cdcVersion: text("cdc_version").notNull(),
+  processedAt: timestamp("processed_at").defaultNow().notNull(),
+});
+
+export const catchUpRecommendations = pgTable("catch_up_recommendations", {
+  id: serial("id").primaryKey(),
+  historyRecordId: integer("history_record_id").references(() => vaccineHistoryRecords.id),
+  sessionId: text("session_id").notNull(),
+  patientAge: text("patient_age").notNull(),
+  recommendations: jsonb("recommendations").notNull(),
+  cdcVersion: text("cdc_version").notNull(),
+  processedAt: timestamp("processed_at").defaultNow().notNull(),
+});
+
+// Insert schemas
+export const insertUser = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertVaccineHistoryRecord = createInsertSchema(vaccineHistoryRecords).omit({ 
+  id: true, 
+  processedAt: true 
+});
+export const insertCatchUpRecommendation = createInsertSchema(catchUpRecommendations).omit({ 
+  id: true, 
+  processedAt: true 
+});
+
+// Types
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUser>;
+export type VaccineHistoryRecord = typeof vaccineHistoryRecords.$inferSelect;
+export type InsertVaccineHistoryRecord = z.infer<typeof insertVaccineHistoryRecord>;
+export type CatchUpRecommendationRecord = typeof catchUpRecommendations.$inferSelect;
+export type InsertCatchUpRecommendation = z.infer<typeof insertCatchUpRecommendation>;

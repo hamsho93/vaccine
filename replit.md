@@ -27,7 +27,9 @@ Preferred communication style: Simple, everyday language.
   - VaccineCatchUpService: CDC catch-up immunization schedule calculations
 
 ## Data Management
-- **Database**: PostgreSQL with Drizzle ORM (configured but minimal usage in current implementation)
+- **Database**: PostgreSQL with Drizzle ORM for persistent storage
+- **Tables**: Users, vaccine history records, and catch-up recommendations
+- **Session Management**: Session-based tracking for anonymous usage without requiring user registration
 - **Schema Validation**: Zod for runtime type checking and API validation
 - **Data Structure**: Shared TypeScript types between frontend and backend via shared schema
 
@@ -43,8 +45,9 @@ Preferred communication style: Simple, everyday language.
 - **Output**: Specific recommendations with next dose dates and clinical notes
 
 ## Authentication & Session Management
-- **Storage**: In-memory storage with session handling via connect-pg-simple
-- **User Management**: Basic user model with username-based identification
+- **Storage**: PostgreSQL-based storage with session-based tracking
+- **User Management**: Optional user model with anonymous session support
+- **Session Tracking**: Each browser session gets a unique ID for tracking processing history
 
 ## Development Environment
 - **Hot Reload**: Vite dev server with HMR for frontend development

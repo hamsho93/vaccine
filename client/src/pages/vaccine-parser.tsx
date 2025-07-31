@@ -19,6 +19,10 @@ export default function VaccineParser() {
   const [catchUpResult, setCatchUpResult] = useState<CatchUpResult | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [showCatchUp, setShowCatchUp] = useState(false);
+  const [sessionId, setSessionId] = useState<string>(() => {
+    // Generate a session ID for this browser session
+    return crypto.randomUUID();
+  });
   const { toast } = useToast();
 
   const form = useForm<ParseVaccineHistoryRequest>({
@@ -30,7 +34,9 @@ export default function VaccineParser() {
 
   const parseVaccinesMutation = useMutation({
     mutationFn: async (data: ParseVaccineHistoryRequest) => {
-      const response = await apiRequest("POST", "/api/parse-vaccine-history", data);
+      const response = await apiRequest("POST", "/api/parse-vaccine-history", data, {
+        'X-Session-ID': sessionId
+      });
       return await response.json();
     },
     onSuccess: (data: VaccineHistoryResult) => {
@@ -53,7 +59,9 @@ export default function VaccineParser() {
 
   const catchUpMutation = useMutation({
     mutationFn: async (data: CatchUpRequest) => {
-      const response = await apiRequest("POST", "/api/vaccine-catchup", data);
+      const response = await apiRequest("POST", "/api/vaccine-catchup", data, {
+        'X-Session-ID': sessionId
+      });
       return await response.json();
     },
     onSuccess: (data: CatchUpResult) => {
