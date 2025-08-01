@@ -8,7 +8,7 @@ const openai = new OpenAI({
 });
 
 export class VaccineParserService {
-  async parseVaccineHistory(rawData: string): Promise<VaccineHistoryResult> {
+  async parseVaccineHistory(rawData: string, birthDate?: string): Promise<VaccineHistoryResult> {
     const prompt = `You are a medical AI assistant specializing in parsing vaccine history data. Parse the following unstructured vaccine history text and return structured data in JSON format.
 
 The input contains vaccine information with dates and patient ages. Parse each vaccine entry and extract:
@@ -23,8 +23,8 @@ ${rawData}
 Please return a JSON object with this exact structure:
 {
   "patientInfo": {
-    "dateOfBirth": "YYYY-MM-DD or null if cannot determine",
-    "currentAge": "readable age string or null",
+    "dateOfBirth": "${birthDate || 'YYYY-MM-DD or null if cannot determine'}",
+    "currentAge": "readable age string calculated from birth date",
     "totalVaccines": number_of_vaccine_types
   },
   "vaccines": [
@@ -53,7 +53,8 @@ Important parsing rules:
 - Standardize vaccine names to CDC nomenclature (e.g., "DTaP" for diphtheria/tetanus/pertussis)
 - Extract age information in readable format (e.g., "3 months", "4 years")
 - Determine series status based on standard vaccine schedules
-- If birth date can be calculated from first vaccine and age, include it
+${birthDate ? `- Use the provided birth date: ${birthDate}` : '- If birth date can be calculated from first vaccine and age, include it'}
+- Calculate the current age from birth date (as of ${new Date().toISOString().split('T')[0]})
 - Add processing notes for any ambiguities or assumptions made`;
 
     try {

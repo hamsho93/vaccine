@@ -31,6 +31,7 @@ export const VaccineHistoryResult = z.object({
 
 export const ParseVaccineHistoryRequest = z.object({
   vaccineData: z.string().min(1, "Vaccine data is required"),
+  birthDate: z.string(), // ISO date string YYYY-MM-DD
 });
 
 export const VaccineRecommendation = z.object({

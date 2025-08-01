@@ -20,7 +20,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionId = req.headers['x-session-id'] as string || randomUUID();
       
       // Parse the vaccine data using OpenAI
-      const result = await vaccineParser.parseVaccineHistory(validatedData.vaccineData);
+      const result = await vaccineParser.parseVaccineHistory(validatedData.vaccineData, validatedData.birthDate);
       
       // Save to database
       await storage.saveVaccineHistory(sessionId, validatedData.vaccineData, result);

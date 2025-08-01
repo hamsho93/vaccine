@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -29,6 +30,7 @@ export default function VaccineParser() {
     resolver: zodResolver(ParseVaccineHistoryRequest),
     defaultValues: {
       vaccineData: "",
+      birthDate: "",
     },
   });
 
@@ -106,6 +108,7 @@ export default function VaccineParser() {
       }))
     };
 
+    setShowCatchUp(true);
     catchUpMutation.mutate(catchUpRequest);
   };
 
@@ -234,6 +237,29 @@ export default function VaccineParser() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
+                  name="birthDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Patient Date of Birth <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="date"
+                          className="max-w-xs"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Enter the patient's birth date to calculate their current age
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="vaccineData"
                   render={({ field }) => (
                     <FormItem>
@@ -243,7 +269,7 @@ export default function VaccineParser() {
                       <FormControl>
                         <Textarea
                           {...field}
-                          rows={12}
+                          rows={10}
                           className="font-mono text-sm"
                           placeholder={`Example:
 DTaP, Unspecified1/19/2011 (3 m.o.)2/17/2011 (4 m.o.)4/7/2011 (6 m.o.)11/19/2013 (3 y.o.)
@@ -370,7 +396,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                   <div>
                     <span className="text-sm font-medium text-slate-600">Date of Birth:</span>
                     <div className="text-sm text-gray-900">
-                      {result.patientInfo.dateOfBirth || "Not determined"}
+                      {result.patientInfo.dateOfBirth ? new Date(result.patientInfo.dateOfBirth).toLocaleDateString() : "Not determined"}
                     </div>
                   </div>
                   <div>

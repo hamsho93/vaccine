@@ -5,6 +5,11 @@ This is a comprehensive medical vaccine history parsing and catch-up planning ap
 The system is built as a full-stack web application with a React frontend for data input and visualization, and a Node.js/Express backend that handles both AI parsing logic and catch-up recommendation calculations. It's designed specifically for medical professionals who need to quickly process vaccine histories and generate catch-up plans based on current CDC guidelines (2025.1).
 
 ## Recent Major Improvements (Aug 1, 2025)
+- **Direct birth date input**: Users now enter patient birth date directly via form field, system calculates age automatically
+- **Fixed Hepatitis A logic**: Properly implements 2-dose series with 6-month intervals per CDC guidelines
+- **Updated HPV intervals**: Corrected to 5-month minimum for 2-dose schedule per 2025 CDC guidelines
+- **Fixed Varicella intervals**: Updated to 4-week minimum between doses for all ages
+- **Enhanced Polio recommendations**: Clear dose-specific guidance with proper age requirements
 - **Robust vaccine name mapping**: Centralized system recognizes 200+ vaccine name variations (HepA→Hepatitis A, flu shot→Influenza, chickenpox→Varicella)
 - **Smart vaccine series recognition**: DTaP/Tdap now treated as unified vaccine series with intelligent age-based recommendations
 - **CDC-compliant catch-up intervals**: Implemented exact minimum intervals from 2025 CDC catch-up schedule
@@ -51,6 +56,7 @@ Preferred communication style: Simple, everyday language.
 ## AI Integration
 - **Provider**: OpenAI GPT-4o for natural language processing
 - **Purpose**: Parsing unstructured vaccine history text into standardized CDC-compliant format
+- **Birth Date Handling**: Uses user-provided birth date to calculate accurate patient age
 - **Output Format**: Structured JSON with patient info, vaccine records, doses, and completion status
 
 ## Catch-Up Recommendation Engine
