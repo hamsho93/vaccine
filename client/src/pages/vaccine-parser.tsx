@@ -389,6 +389,11 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
               </div>
 
               {/* Vaccines Table */}
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <span className="font-semibold">Parsed History:</span> Vaccines already given to the patient based on your input. DTaP/Tdap are the same vaccine series but named differently by age.
+                </p>
+              </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -481,6 +486,11 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
               <p className="text-sm text-slate-600">
                 Based on patient age ({catchUpResult.patientAge}) and current vaccine history
               </p>
+              <div className="mt-3 p-3 bg-amber-50 rounded-lg">
+                <p className="text-sm text-amber-800">
+                  <span className="font-semibold">What's Needed Next:</span> These are vaccines the patient still needs based on their age and history. DTaP (for children) and Tdap (for adolescents/adults) are the same vaccine series.
+                </p>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
