@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ParseVaccineHistoryRequest, VaccineHistoryResult, CatchUpRequest, CatchUpResult } from "@shared/schema";
@@ -20,6 +21,14 @@ export default function VaccineParser() {
   const [catchUpResult, setCatchUpResult] = useState<CatchUpResult | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [showCatchUp, setShowCatchUp] = useState(false);
+  const [specialConditions, setSpecialConditions] = useState({
+    immunocompromised: false,
+    pregnancy: false,
+    hivInfection: false,
+    asplenia: false,
+    cochlearImplant: false,
+    csfLeak: false,
+  });
   const [sessionId, setSessionId] = useState<string>(() => {
     // Generate a session ID for this browser session
     return crypto.randomUUID();
@@ -105,7 +114,8 @@ export default function VaccineParser() {
         doses: vaccine.doses.map(dose => ({
           date: dose.date
         }))
-      }))
+      })),
+      specialConditions: specialConditions
     };
 
     setShowCatchUp(true);
@@ -501,6 +511,127 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
           </Card>
         )}
 
+        {/* Special Conditions Section */}
+        {result && !catchUpResult && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Info className="text-purple-600 mr-2" />
+                Special Medical Conditions
+              </CardTitle>
+              <p className="text-sm text-slate-600">
+                Select any special conditions that apply to this patient. These affect vaccine recommendations.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="immunocompromised"
+                    checked={specialConditions.immunocompromised}
+                    onCheckedChange={(checked) => 
+                      setSpecialConditions(prev => ({ ...prev, immunocompromised: checked as boolean }))
+                    }
+                  />
+                  <label
+                    htmlFor="immunocompromised"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Immunocompromised
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="pregnancy"
+                    checked={specialConditions.pregnancy}
+                    onCheckedChange={(checked) => 
+                      setSpecialConditions(prev => ({ ...prev, pregnancy: checked as boolean }))
+                    }
+                  />
+                  <label
+                    htmlFor="pregnancy"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Pregnant
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="hivInfection"
+                    checked={specialConditions.hivInfection}
+                    onCheckedChange={(checked) => 
+                      setSpecialConditions(prev => ({ ...prev, hivInfection: checked as boolean }))
+                    }
+                  />
+                  <label
+                    htmlFor="hivInfection"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    HIV Infection
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="asplenia"
+                    checked={specialConditions.asplenia}
+                    onCheckedChange={(checked) => 
+                      setSpecialConditions(prev => ({ ...prev, asplenia: checked as boolean }))
+                    }
+                  />
+                  <label
+                    htmlFor="asplenia"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Asplenia (No spleen)
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="cochlearImplant"
+                    checked={specialConditions.cochlearImplant}
+                    onCheckedChange={(checked) => 
+                      setSpecialConditions(prev => ({ ...prev, cochlearImplant: checked as boolean }))
+                    }
+                  />
+                  <label
+                    htmlFor="cochlearImplant"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Cochlear Implant
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="csfLeak"
+                    checked={specialConditions.csfLeak}
+                    onCheckedChange={(checked) => 
+                      setSpecialConditions(prev => ({ ...prev, csfLeak: checked as boolean }))
+                    }
+                  />
+                  <label
+                    htmlFor="csfLeak"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    CSF Leak
+                  </label>
+                </div>
+              </div>
+              
+              <Alert className="mt-4 bg-purple-50 border-purple-200">
+                <AlertCircle className="h-4 w-4 text-purple-600" />
+                <AlertDescription className="text-purple-800">
+                  Special conditions may change vaccine recommendations, intervals, or indicate additional vaccines needed.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Catch-Up Recommendations Section */}
         {catchUpResult && (
           <Card className="mb-8">
@@ -550,6 +681,58 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                         <ul className="list-disc pl-4 space-y-0.5">
                           {rec.notes.map((note, noteIndex) => (
                             <li key={noteIndex}>{note}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {rec.decisionType && rec.decisionType !== 'routine' && (
+                      <div className="mt-2">
+                        <Badge 
+                          variant="outline"
+                          className={
+                            rec.decisionType === 'shared-clinical-decision' ? 'bg-blue-50 text-blue-700 border-blue-300' :
+                            rec.decisionType === 'risk-based' ? 'bg-purple-50 text-purple-700 border-purple-300' :
+                            rec.decisionType === 'not-recommended' ? 'bg-gray-50 text-gray-700 border-gray-300' :
+                            ''
+                          }
+                        >
+                          {rec.decisionType === 'shared-clinical-decision' ? 'Shared Clinical Decision' :
+                           rec.decisionType === 'risk-based' ? 'Risk-Based Recommendation' :
+                           rec.decisionType === 'not-recommended' ? 'Not Recommended' :
+                           rec.decisionType}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {rec.contraindications && rec.contraindications.length > 0 && (
+                      <div className="mt-2 text-xs text-red-700 bg-red-50 rounded p-2">
+                        <div className="font-medium mb-1">⚠️ Contraindications:</div>
+                        <ul className="list-disc pl-4 space-y-0.5">
+                          {rec.contraindications.map((contra, index) => (
+                            <li key={index}>{contra}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {rec.precautions && rec.precautions.length > 0 && (
+                      <div className="mt-2 text-xs text-orange-700 bg-orange-50 rounded p-2">
+                        <div className="font-medium mb-1">⚠️ Precautions:</div>
+                        <ul className="list-disc pl-4 space-y-0.5">
+                          {rec.precautions.map((precaution, index) => (
+                            <li key={index}>{precaution}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {rec.specialSituations && rec.specialSituations.length > 0 && (
+                      <div className="mt-2 text-xs text-purple-700 bg-purple-50 rounded p-2">
+                        <div className="font-medium mb-1">Special Situations:</div>
+                        <ul className="list-disc pl-4 space-y-0.5">
+                          {rec.specialSituations.map((situation, index) => (
+                            <li key={index}>{situation}</li>
                           ))}
                         </ul>
                       </div>

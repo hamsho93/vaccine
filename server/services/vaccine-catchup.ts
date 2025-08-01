@@ -1,5 +1,14 @@
 import { CatchUpRequest, CatchUpResult, VaccineRecommendation } from "@shared/schema";
 import { vaccineNameMapper } from "./vaccine-name-mapper";
+import { 
+  getVaccineRules, 
+  isDoseTooEarly, 
+  addCalendarMonths,
+  checkContraindications,
+  checkPrecautions,
+  getSpecialSituationModifications,
+  type SpecialConditions
+} from "./vaccine-cdc-rules";
 
 interface VaccineDoseInfo {
   date: Date;
@@ -59,7 +68,8 @@ export class VaccineCatchUpService {
     vaccineName: string,
     birthDate: Date,
     currentDate: Date,
-    doses: VaccineDoseInfo[]
+    doses: VaccineDoseInfo[],
+    specialConditions?: SpecialConditions
   ): VaccineRecommendation {
     const normalizedName = this.normalizeVaccineName(vaccineName);
     const sortedDoses = doses.sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -72,6 +82,10 @@ export class VaccineCatchUpService {
     let nextDoseDate: string | undefined;
     let seriesComplete = false;
     const notes: string[] = [];
+    let decisionType: VaccineRecommendation['decisionType'] = 'routine';
+    const contraindications: string[] = [];
+    const precautions: string[] = [];
+    const specialSituations: string[] = [];
 
     switch (normalizedName) {
       case 'hepatitis_b':
@@ -674,13 +688,39 @@ export class VaccineCatchUpService {
         break;
 
       case 'covid19':
+        // COVID-19 vaccine recommendations based on age and special conditions
         if (currentAgeMonths < 6) {
           recommendation = 'COVID-19 vaccine not recommended under 6 months';
+          seriesComplete = false;
           notes.push('Minimum age: 6 months');
+          decisionType = 'not-recommended';
+        } else if (currentAgeYears < 18) {
+          // Shared clinical decision-making for 6 months-17 years
+          decisionType = 'shared-clinical-decision';
+          if (numDoses === 0) {
+            if (specialConditions?.immunocompromised) {
+              recommendation = 'Recommended: Give COVID-19 vaccine dose 1 (3-dose primary series for immunocompromised)';
+              notes.push('Immunocompromised: 3-dose primary series plus additional doses recommended');
+              decisionType = 'risk-based';
+            } else {
+              recommendation = 'COVID-19 vaccine available through shared clinical decision-making';
+              notes.push('Discuss with healthcare provider based on individual risk and benefit');
+            }
+          } else {
+            recommendation = 'Continue COVID-19 vaccination per current CDC guidance';
+            notes.push('Follow age-appropriate schedule');
+          }
         } else {
-          recommendation = 'Give COVID-19 vaccine per current CDC guidance';
-          notes.push('COVID-19 vaccine recommendations update frequently - check current CDC guidance');
-          notes.push('Consider patient age, previous vaccination history, and current circulating variants');
+          // Routine for 18 years
+          decisionType = 'routine';
+          if (numDoses === 0) {
+            recommendation = 'Give COVID-19 vaccine dose 1 now';
+            nextDoseDate = this.formatDate(currentDate);
+          } else {
+            recommendation = 'COVID-19 vaccination up to date per current guidelines';
+            seriesComplete = true;
+            notes.push('Continue to follow CDC guidance for boosters');
+          }
         }
         break;
 
@@ -740,18 +780,48 @@ export class VaccineCatchUpService {
     // Display user-friendly vaccine names using centralized mapper
     const displayName = vaccineNameMapper.getAgeSpecificDisplay(normalizedName, currentAgeYears);
 
+    // Get CDC rules for enhanced recommendations
+    const cdcRules = getVaccineRules(normalizedName);
+    if (cdcRules) {
+      // Check for contraindications and precautions
+      contraindications.push(...checkContraindications(normalizedName));
+      precautions.push(...checkPrecautions(normalizedName));
+      
+      // Get special situation modifications
+      if (specialConditions) {
+        const modifications = getSpecialSituationModifications(normalizedName, specialConditions);
+        specialSituations.push(...modifications);
+      }
+      
+      // Add CDC notes if available
+      if (cdcRules.notes.length > 0) {
+        notes.push(...cdcRules.notes);
+      }
+    }
+    
+    // Set decision type for COVID-19 based on age
+    if (normalizedName === 'covid19' && currentAgeYears < 18) {
+      decisionType = 'shared-clinical-decision';
+      notes.unshift('Shared clinical decision-making recommended for ages 6 months-17 years');
+    }
+
     return {
       vaccineName: displayName,
       recommendation,
       nextDoseDate,
       seriesComplete,
-      notes
+      notes,
+      decisionType,
+      contraindications: contraindications.length > 0 ? contraindications : undefined,
+      precautions: precautions.length > 0 ? precautions : undefined,
+      specialSituations: specialSituations.length > 0 ? specialSituations : undefined
     };
   }
 
   async generateCatchUpRecommendations(request: CatchUpRequest): Promise<CatchUpResult> {
     const birthDate = this.parseDate(request.birthDate);
     const currentDate = request.currentDate ? this.parseDate(request.currentDate) : new Date();
+    const specialConditions = request.specialConditions || {};
     
     const patientAge = this.calculateAge(birthDate, currentDate);
     const recommendations: VaccineRecommendation[] = [];
@@ -774,7 +844,8 @@ export class VaccineCatchUpService {
         vaccineHistory.vaccineName,
         birthDate,
         currentDate,
-        doses
+        doses,
+        specialConditions
       );
       
       recommendations.push(recommendation);
@@ -789,7 +860,8 @@ export class VaccineCatchUpService {
           vaccine,
           birthDate,
           currentDate,
-          []
+          [],
+          specialConditions
         );
         recommendations.push(recommendation);
       }

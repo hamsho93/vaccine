@@ -23,6 +23,15 @@ The system is built as a full-stack web application with a React frontend for da
   - Corrected Varicella to 4-week minimum interval for all ages
   - Enhanced Polio (IPV) with clear dose-specific recommendations
   - Verified all age restrictions, dose counts, and interval logic against CDC standards
+- **Comprehensive CDC Guidelines Implementation (Aug 1, 2025)**:
+  - Added vaccine-cdc-rules.ts service with complete CDC compliance logic
+  - Implemented shared clinical decision-making for COVID-19 (ages 6 months-17 years)
+  - Added contraindications and precautions checking system
+  - Special medical conditions support (immunocompromised, asplenia, HIV, pregnancy, etc.)
+  - Enhanced recommendations show decision types: routine, shared-clinical-decision, risk-based, not-recommended
+  - Special situation modifications for high-risk patients
+  - Frontend UI displays contraindications, precautions, and special situations with color-coded alerts
+  - Interactive special conditions selection before generating catch-up recommendations
 
 # User Preferences
 
@@ -45,6 +54,8 @@ Preferred communication style: Simple, everyday language.
 - **Service Layer**: Modular service architecture with:
   - VaccineParserService: AI-powered text parsing using OpenAI GPT-4o
   - VaccineCatchUpService: CDC catch-up immunization schedule calculations
+  - VaccineCDCRulesService: Comprehensive CDC guidelines implementation with contraindications and special situations
+  - VaccineNameMapper: Centralized vaccine name normalization and age-specific display logic
 
 ## Data Management
 - **Database**: PostgreSQL with Drizzle ORM for persistent storage
@@ -60,10 +71,21 @@ Preferred communication style: Simple, everyday language.
 - **Output Format**: Structured JSON with patient info, vaccine records, doses, and completion status
 
 ## Catch-Up Recommendation Engine
-- **CDC Guidelines**: Based on 2025.1 CDC catch-up immunization schedule
+- **CDC Guidelines**: Based on 2025.1 CDC catch-up immunization schedule with comprehensive guidelines
 - **Coverage**: All standard vaccines (HepB, Rotavirus, DTaP, Hib, PCV, IPV, COVID-19, Influenza, MMR, VAR, HepA, Tdap, HPV, MenACWY, MenB)
-- **Logic**: Calculates minimum intervals, age requirements, and maximum age limits
-- **Output**: Specific recommendations with next dose dates and clinical notes
+- **Logic**: Calculates minimum intervals, age requirements, maximum age limits, and special conditions
+- **Advanced Features**:
+  - Shared clinical decision-making protocols (e.g., COVID-19 for ages 6 months-17 years)
+  - Contraindications and precautions checking
+  - Special medical conditions support (immunocompromised, asplenia, HIV, pregnancy, etc.)
+  - Risk-based recommendations for high-risk populations
+  - 4-day grace period rule implementation
+  - Enhanced guidance for special situations
+- **Output**: Comprehensive recommendations with:
+  - Next dose dates and clinical notes
+  - Decision type indicators (routine, shared-clinical-decision, risk-based)
+  - Contraindications and precautions when applicable
+  - Special situation modifications
 
 ## Authentication & Session Management
 - **Storage**: PostgreSQL-based storage with session-based tracking

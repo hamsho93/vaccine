@@ -40,6 +40,10 @@ export const VaccineRecommendation = z.object({
   nextDoseDate: z.string().optional(), // ISO date string
   seriesComplete: z.boolean(),
   notes: z.array(z.string()),
+  decisionType: z.enum(["routine", "catch-up", "shared-clinical-decision", "risk-based", "not-recommended"]).optional(),
+  contraindications: z.array(z.string()).optional(),
+  precautions: z.array(z.string()).optional(),
+  specialSituations: z.array(z.string()).optional(),
 });
 
 export const CatchUpRequest = z.object({
@@ -51,6 +55,19 @@ export const CatchUpRequest = z.object({
       date: z.string(), // ISO date string
     })),
   })),
+  specialConditions: z.object({
+    immunocompromised: z.boolean().optional(),
+    pregnancy: z.boolean().optional(),
+    hivInfection: z.boolean().optional(),
+    asplenia: z.boolean().optional(),
+    cochlearImplant: z.boolean().optional(),
+    csfLeak: z.boolean().optional(),
+    diabetes: z.boolean().optional(),
+    chronicHeartDisease: z.boolean().optional(),
+    chronicLungDisease: z.boolean().optional(),
+    chronicLiverDisease: z.boolean().optional(),
+    chronicKidneyDisease: z.boolean().optional(),
+  }).optional(),
 });
 
 export const CatchUpResult = z.object({
