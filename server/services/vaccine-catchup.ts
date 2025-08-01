@@ -367,30 +367,53 @@ export class VaccineCatchUpService {
       case 'polio':
         const ipvTotalDoses = 4;
         const ipvMinAge = 42; // 6 weeks
-        const ipvMinIntervals = [28, 28, 183]; // 4w, 4w, 6m for dose 3-4 if >4yrs
         
         if (numDoses >= ipvTotalDoses) {
-          recommendation = 'Series complete';
+          recommendation = 'Polio (IPV) series complete';
           seriesComplete = true;
+          notes.push('Four doses provide lifelong protection against polio');
         } else if (numDoses === 0) {
           if (currentAgeDays >= ipvMinAge) {
-            recommendation = 'Give dose 1 now';
+            recommendation = 'Give polio (IPV) dose 1 now';
+            notes.push('Schedule: 2, 4, 6-18 months, 4-6 years');
+            notes.push('Minimum age: 6 weeks');
           } else {
             const nextDate = this.addDays(birthDate, ipvMinAge);
-            recommendation = `Give dose 1 on or after ${this.formatDate(nextDate)}`;
+            recommendation = `Give polio (IPV) dose 1 on or after ${this.formatDate(nextDate)}`;
+            nextDoseDate = this.formatDate(nextDate);
+            notes.push('Minimum age: 6 weeks');
+          }
+        } else if (numDoses === 1) {
+          const nextDate = this.addDays(sortedDoses[0].date, 28); // 4 weeks
+          if (currentDate >= nextDate) {
+            recommendation = 'Give polio (IPV) dose 2 now';
+          } else {
+            recommendation = `Give polio (IPV) dose 2 on or after ${this.formatDate(nextDate)}`;
             nextDoseDate = this.formatDate(nextDate);
           }
-        } else {
-          const interval = numDoses < 3 ? ipvMinIntervals[numDoses - 1] : 
-                          (currentAgeDays >= 1460 ? 183 : 28); // 4 years
-          const nextDate = this.addDays(sortedDoses[numDoses - 1].date, interval);
+          notes.push('Minimum interval: 4 weeks between doses 1-2');
+        } else if (numDoses === 2) {
+          const nextDate = this.addDays(sortedDoses[1].date, 28); // 4 weeks
+          if (currentDate >= nextDate) {
+            recommendation = 'Give polio (IPV) dose 3 now';
+          } else {
+            recommendation = `Give polio (IPV) dose 3 on or after ${this.formatDate(nextDate)}`;
+            nextDoseDate = this.formatDate(nextDate);
+          }
+          notes.push('Minimum interval: 4 weeks between doses 2-3');
+        } else if (numDoses === 3) {
+          // Final dose must be at age 4+ AND 6 months after dose 3
+          const ageDate = this.addDays(birthDate, 4 * 365); // 4 years
+          const intervalDate = this.addDays(sortedDoses[2].date, 183); // 6 months
+          const nextDate = new Date(Math.max(ageDate.getTime(), intervalDate.getTime()));
           
           if (currentDate >= nextDate) {
-            recommendation = 'Give next dose now';
+            recommendation = 'Give polio (IPV) dose 4 now (final dose)';
           } else {
-            recommendation = `Give next dose on or after ${this.formatDate(nextDate)}`;
+            recommendation = `Give polio (IPV) dose 4 on or after ${this.formatDate(nextDate)} (final dose)`;
             nextDoseDate = this.formatDate(nextDate);
           }
+          notes.push('Final dose: must be given at age 4+ years AND 6 months after dose 3');
         }
         break;
 
@@ -435,7 +458,7 @@ export class VaccineCatchUpService {
       case 'varicella':
         const varTotalDoses = 2;
         const varMinAge = 365; // 12 months
-        const varInterval = currentAgeDays >= 4745 ? 28 : 84; // 13 yrs, 4 weeks vs 12 weeks
+        const varInterval = 28; // 4 weeks minimum for all ages per CDC 2025
         
         if (numDoses >= varTotalDoses) {
           recommendation = 'Varicella series complete';
@@ -444,11 +467,7 @@ export class VaccineCatchUpService {
         } else if (numDoses === 0) {
           if (currentAgeDays >= varMinAge) {
             recommendation = 'Give varicella dose 1 now';
-            if (currentAgeYears >= 13) {
-              notes.push('Schedule for ≥13 years: Dose 1 → 4 weeks → Dose 2');
-            } else {
-              notes.push('Schedule for <13 years: Dose 1 → 3 months → Dose 2');
-            }
+            notes.push('Schedule: Dose 1 → 4 weeks minimum → Dose 2');
           } else {
             const nextDate = this.addDays(birthDate, varMinAge);
             recommendation = `Give varicella dose 1 on or after ${this.formatDate(nextDate)}`;
@@ -469,11 +488,7 @@ export class VaccineCatchUpService {
             recommendation = `Give varicella dose 2 on or after ${this.formatDate(nextDate)} (final dose)`;
             nextDoseDate = this.formatDate(nextDate);
           }
-          if (currentAgeYears >= 13) {
-            notes.push('Minimum interval for ≥13 years: 4 weeks between doses');
-          } else {
-            notes.push('Minimum interval for <13 years: 3 months between doses');
-          }
+          notes.push('Minimum interval: 4 weeks between doses');
         }
         break;
 
@@ -535,9 +550,9 @@ export class VaccineCatchUpService {
           if (currentAgeYears >= 9) {
             recommendation = 'Give HPV dose 1 now';
             if (currentAgeYears < 15) {
-              notes.push('2-dose schedule: Dose 1 → 6-12 months → Dose 2');
+              notes.push('2-dose schedule: Dose 1 → 5+ months → Dose 2');
             } else {
-              notes.push('3-dose schedule (≥15 years): Dose 1 → 1-2 months → Dose 2 → 6 months → Dose 3');
+              notes.push('3-dose schedule (≥15 years): Dose 1 → 1-2 months → Dose 2 → 5 months → Dose 3');
             }
             // Only show routine guidance if patient is close to routine age
             if (currentAgeYears <= 12) {
@@ -565,26 +580,29 @@ export class VaccineCatchUpService {
             }
             notes.push('3-dose schedule: minimum 1 month between doses 1-2');
           } else {
-            // 2-dose schedule: 6-12 months after dose 1
-            const nextDate = this.addDays(sortedDoses[0].date, 183); // 6 months
+            // 2-dose schedule: 5 months minimum after dose 1 per CDC 2025
+            const nextDate = this.addDays(sortedDoses[0].date, 150); // 5 months minimum
             if (currentDate >= nextDate) {
               recommendation = 'Give HPV dose 2 now (final dose)';
             } else {
               recommendation = `Give HPV dose 2 on or after ${this.formatDate(nextDate)} (final dose)`;
               nextDoseDate = this.formatDate(nextDate);
             }
-            notes.push('2-dose schedule: 6-12 months between doses');
+            notes.push('2-dose schedule: minimum 5 months between doses');
           }
         } else if (numDoses === 2 && isOlderStart) {
-          // Final dose for 3-dose schedule: 6 months after dose 1
-          const nextDate = this.addDays(sortedDoses[0].date, 183); // 6 months from dose 1
+          // Final dose for 3-dose schedule: 5 months after dose 1 AND 12 weeks after dose 2
+          const fiveMonthsFromDose1 = this.addDays(sortedDoses[0].date, 150); // 5 months from dose 1
+          const twelveWeeksFromDose2 = this.addDays(sortedDoses[1].date, 84); // 12 weeks from dose 2
+          const nextDate = new Date(Math.max(fiveMonthsFromDose1.getTime(), twelveWeeksFromDose2.getTime()));
+          
           if (currentDate >= nextDate) {
             recommendation = 'Give HPV dose 3 now (final dose)';
           } else {
             recommendation = `Give HPV dose 3 on or after ${this.formatDate(nextDate)} (final dose)`;
             nextDoseDate = this.formatDate(nextDate);
           }
-          notes.push('Final dose: minimum 6 months after dose 1');
+          notes.push('Final dose: minimum 5 months after dose 1 AND 12 weeks after dose 2');
         }
         break;
 
@@ -682,27 +700,35 @@ export class VaccineCatchUpService {
       case 'hepatitis_a':
         // Hepatitis A vaccine - 2 dose series
         if (numDoses === 0) {
-          recommendation = 'Give Hepatitis A dose 1 now';
-          nextDoseDate = this.formatDate(currentDate);
-          notes.push('Hepatitis A recommended for all children ≥12 months');
-          notes.push('Catch-up vaccination through age 18 years');
+          if (currentAgeMonths >= 12) {
+            recommendation = 'Give Hepatitis A dose 1 now';
+            nextDoseDate = this.formatDate(currentDate);
+            notes.push('Hepatitis A recommended for all children ≥12 months');
+            notes.push('Catch-up vaccination through age 18 years');
+          } else {
+            const nextDate = this.addDays(birthDate, 365); // 12 months
+            recommendation = `Give Hepatitis A dose 1 on or after ${this.formatDate(nextDate)}`;
+            nextDoseDate = this.formatDate(nextDate);
+            notes.push('Minimum age: 12 months');
+          }
         } else if (numDoses === 1) {
           // Need 6 months between doses
           const daysSinceLast = this.getAgeInDays(sortedDoses[0].date, currentDate);
           const minInterval = 180; // 6 months
           
           if (daysSinceLast >= minInterval) {
-            recommendation = 'Give Hepatitis A dose 2 now';
+            recommendation = 'Give Hepatitis A dose 2 now (final dose)';
             nextDoseDate = this.formatDate(currentDate);
           } else {
             const nextDate = this.addDays(sortedDoses[0].date, minInterval);
-            recommendation = `Give Hepatitis A dose 2 on or after ${this.formatDate(nextDate)}`;
+            recommendation = `Give Hepatitis A dose 2 on or after ${this.formatDate(nextDate)} (final dose)`;
             nextDoseDate = this.formatDate(nextDate);
           }
           notes.push('Minimum interval: 6 months between doses');
         } else {
           seriesComplete = true;
           recommendation = 'Hepatitis A series complete';
+          notes.push('Two doses provide long-term protection');
         }
         break;
 
