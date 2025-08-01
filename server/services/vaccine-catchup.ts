@@ -1,133 +1,11 @@
 import { CatchUpRequest, CatchUpResult, VaccineRecommendation } from "@shared/schema";
+import { vaccineNameMapper } from "./vaccine-name-mapper";
 
 interface VaccineDoseInfo {
   date: Date;
 }
 
-// Comprehensive vaccine name mapping for all common variations
-const VACCINE_NAME_MAP: Record<string, string> = {
-  // Hepatitis B variations
-  'hepb': 'hepatitis_b',
-  'hepatitis b': 'hepatitis_b',
-  'hepatitis-b': 'hepatitis_b',
-  'hep b': 'hepatitis_b',
-  'hbv': 'hepatitis_b',
-  
-  // Rotavirus variations
-  'rotavirus': 'rotavirus',
-  'rota': 'rotavirus',
-  'rv': 'rotavirus',
-  'rv1': 'rotavirus',
-  'rv5': 'rotavirus',
-  'rotateq': 'rotavirus',
-  'rotarix': 'rotavirus',
-  
-  // DTaP/Tdap variations - all map to the same vaccine series
-  'dtap': 'dtap_tdap',
-  'dtp': 'dtap_tdap',
-  'diphtheria': 'dtap_tdap',
-  'tetanus': 'dtap_tdap',
-  'pertussis': 'dtap_tdap',
-  'whooping cough': 'dtap_tdap',
-  'dt': 'dtap_tdap',
-  'td': 'dtap_tdap',
-  'tdap': 'dtap_tdap',
-  'diphtheria-tetanus-pertussis': 'dtap_tdap',
-  'diphtheria tetanus pertussis': 'dtap_tdap',
-  
-  // Haemophilus influenzae type b
-  'hib': 'hib',
-  'haemophilus': 'hib',
-  'h influenzae': 'hib',
-  'haemophilus influenzae': 'hib',
-  'haemophilus influenzae type b': 'hib',
-  
-  // Pneumococcal variations
-  'pcv': 'pneumococcal',
-  'pcv13': 'pneumococcal',
-  'pcv15': 'pneumococcal',
-  'pcv20': 'pneumococcal',
-  'pneumococcal': 'pneumococcal',
-  'pneumo': 'pneumococcal',
-  'prevnar': 'pneumococcal',
-  'ppsv23': 'pneumococcal',
-  
-  // Inactivated Poliovirus Vaccine
-  'ipv': 'polio',
-  'polio': 'polio',
-  'poliovirus': 'polio',
-  'inactivated polio': 'polio',
-  
-  // Influenza variations
-  'influenza': 'influenza',
-  'flu': 'influenza',
-  'flu shot': 'influenza',
-  'seasonal flu': 'influenza',
-  'trivalent': 'influenza',
-  'quadrivalent': 'influenza',
-  
-  // MMR variations
-  'mmr': 'mmr',
-  'measles': 'mmr',
-  'mumps': 'mmr',
-  'rubella': 'mmr',
-  'german measles': 'mmr',
-  'mmrv': 'mmrv',
-  
-  // Varicella (Chickenpox)
-  'varicella': 'varicella',
-  'var': 'varicella',
-  'chickenpox': 'varicella',
-  'chicken pox': 'varicella',
-  'vzv': 'varicella',
-  
-  // Hepatitis A
-  'hepa': 'hepatitis_a',
-  'hepatitis a': 'hepatitis_a',
-  'hepatitis-a': 'hepatitis_a',
-  'hep a': 'hepatitis_a',
-  'hav': 'hepatitis_a',
-  
-  // HPV variations
-  'hpv': 'hpv',
-  'gardasil': 'hpv',
-  'cervarix': 'hpv',
-  'human papillomavirus': 'hpv',
-  'hpv9': 'hpv',
-  'hpv4': 'hpv',
-  'hpv2': 'hpv',
-  
-  // Meningococcal variations
-  'menacwy': 'meningococcal_acwy',
-  'mena': 'meningococcal_acwy',
-  'menacwy-d': 'meningococcal_acwy',
-  'menacwy-crm': 'meningococcal_acwy',
-  'menveo': 'meningococcal_acwy',
-  'menquadfi': 'meningococcal_acwy',
-  'meningococcal': 'meningococcal_acwy',
-  'menb': 'meningococcal_b',
-  'meningococcal b': 'meningococcal_b',
-  'bexsero': 'meningococcal_b',
-  'trumenba': 'meningococcal_b',
-  
-  // COVID-19 variations
-  'covid': 'covid19',
-  'covid-19': 'covid19',
-  'covid19': 'covid19',
-  'coronavirus': 'covid19',
-  'sars-cov-2': 'covid19',
-  'pfizer': 'covid19',
-  'moderna': 'covid19',
-  'johnson': 'covid19',
-  'novavax': 'covid19',
-  
-  // RSV variations
-  'rsv': 'rsv',
-  'respiratory syncytial virus': 'rsv',
-  'respiratory syncytial': 'rsv',
-  'abrysvo': 'rsv',
-  'arexvy': 'rsv',
-};
+// Vaccine name normalization is now handled by the centralized vaccine-name-mapper
 
 export class VaccineCatchUpService {
   private parseDate(dateStr: string): Date {
@@ -160,10 +38,9 @@ export class VaccineCatchUpService {
     }
   }
 
-  // Normalize vaccine name using the mapping
+  // Normalize vaccine name using the centralized mapper
   private normalizeVaccineName(name: string): string {
-    const normalized = name.toLowerCase().trim();
-    return VACCINE_NAME_MAP[normalized] || normalized;
+    return vaccineNameMapper.toInternal(name);
   }
 
   // Get age in months for easier calculations
@@ -807,37 +684,8 @@ export class VaccineCatchUpService {
         notes.push('Vaccine not in standard catch-up schedule or name not recognized');
     }
 
-    // Display user-friendly vaccine names
-    let displayName = normalizedName;
-    if (normalizedName === 'dtap_tdap') {
-      displayName = currentAgeYears >= 7 ? 'Tdap' : 'DTaP';
-    } else if (normalizedName === 'hepatitis_b') {
-      displayName = 'Hepatitis B';
-    } else if (normalizedName === 'hepatitis_a') {
-      displayName = 'Hepatitis A';
-    } else if (normalizedName === 'hib') {
-      displayName = 'HIB';
-    } else if (normalizedName === 'pneumococcal') {
-      displayName = 'Pneumococcal (PCV)';
-    } else if (normalizedName === 'polio') {
-      displayName = 'Polio (IPV)';
-    } else if (normalizedName === 'influenza') {
-      displayName = 'Influenza';
-    } else if (normalizedName === 'mmr') {
-      displayName = 'MMR';
-    } else if (normalizedName === 'varicella') {
-      displayName = 'Varicella';
-    } else if (normalizedName === 'hpv') {
-      displayName = 'HPV';
-    } else if (normalizedName === 'meningococcal_acwy') {
-      displayName = 'MenACWY';
-    } else if (normalizedName === 'meningococcal_b') {
-      displayName = 'MenB';
-    } else if (normalizedName === 'covid19') {
-      displayName = 'COVID-19';
-    } else if (normalizedName === 'rotavirus') {
-      displayName = 'Rotavirus';
-    }
+    // Display user-friendly vaccine names using centralized mapper
+    const displayName = vaccineNameMapper.getAgeSpecificDisplay(normalizedName, currentAgeYears);
 
     return {
       vaccineName: displayName,

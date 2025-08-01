@@ -5,6 +5,7 @@ This is a comprehensive medical vaccine history parsing and catch-up planning ap
 The system is built as a full-stack web application with a React frontend for data input and visualization, and a Node.js/Express backend that handles both AI parsing logic and catch-up recommendation calculations. It's designed specifically for medical professionals who need to quickly process vaccine histories and generate catch-up plans based on current CDC guidelines (2025.1).
 
 ## Recent Major Improvements (Aug 1, 2025)
+- **Robust vaccine name mapping**: Centralized system recognizes 200+ vaccine name variations (HepA→Hepatitis A, flu shot→Influenza, chickenpox→Varicella)
 - **Smart vaccine series recognition**: DTaP/Tdap now treated as unified vaccine series with intelligent age-based recommendations
 - **CDC-compliant catch-up intervals**: Implemented exact minimum intervals from 2025 CDC catch-up schedule
 - **Fixed vaccine name matching**: System properly recognizes "DTaP" in patient history matches "Tdap" recommendations

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { VaccineHistoryResult } from "@shared/schema";
+import { vaccineNameMapper } from "./vaccine-name-mapper";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
@@ -78,6 +79,21 @@ Important parsing rules:
       }
 
       const parsed = JSON.parse(content);
+      
+      // Normalize vaccine names using centralized mapper
+      if (parsed.vaccines) {
+        parsed.vaccines = parsed.vaccines.map((vaccine: any) => {
+          const internalCode = vaccineNameMapper.toInternal(vaccine.vaccineName || vaccine.standardName);
+          const mapping = vaccineNameMapper.getMapping(internalCode);
+          
+          return {
+            ...vaccine,
+            vaccineName: vaccine.vaccineName || mapping?.standardName || vaccine.standardName,
+            standardName: mapping?.standardName || vaccine.standardName,
+            abbreviation: vaccine.abbreviation || (mapping?.abbreviations[0] || '')
+          };
+        });
+      }
       
       // Validate the structure matches our schema
       const result = VaccineHistoryResult.parse(parsed);
