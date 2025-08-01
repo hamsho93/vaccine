@@ -679,6 +679,33 @@ export class VaccineCatchUpService {
         }
         break;
 
+      case 'hepatitis_a':
+        // Hepatitis A vaccine - 2 dose series
+        if (numDoses === 0) {
+          recommendation = 'Give Hepatitis A dose 1 now';
+          nextDoseDate = this.formatDate(currentDate);
+          notes.push('Hepatitis A recommended for all children ≥12 months');
+          notes.push('Catch-up vaccination through age 18 years');
+        } else if (numDoses === 1) {
+          // Need 6 months between doses
+          const daysSinceLast = this.getAgeInDays(sortedDoses[0].date, currentDate);
+          const minInterval = 180; // 6 months
+          
+          if (daysSinceLast >= minInterval) {
+            recommendation = 'Give Hepatitis A dose 2 now';
+            nextDoseDate = this.formatDate(currentDate);
+          } else {
+            const nextDate = this.addDays(sortedDoses[0].date, minInterval);
+            recommendation = `Give Hepatitis A dose 2 on or after ${this.formatDate(nextDate)}`;
+            nextDoseDate = this.formatDate(nextDate);
+          }
+          notes.push('Minimum interval: 6 months between doses');
+        } else {
+          seriesComplete = true;
+          recommendation = 'Hepatitis A series complete';
+        }
+        break;
+
       default:
         recommendation = 'No specific recommendation; consult CDC guidelines';
         notes.push('Vaccine not in standard catch-up schedule or name not recognized');
