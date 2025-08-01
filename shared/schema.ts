@@ -31,6 +31,8 @@ export const VaccineHistoryResult = z.object({
 
 export const ParseVaccineHistoryRequest = z.object({
   vaccineData: z.string().min(1, "Vaccine data is required"),
+  ageYears: z.number().min(0).max(100),
+  ageMonths: z.number().min(0).max(11),
 });
 
 export const VaccineRecommendation = z.object({

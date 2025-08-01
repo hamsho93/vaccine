@@ -8,13 +8,21 @@ const openai = new OpenAI({
 });
 
 export class VaccineParserService {
-  async parseVaccineHistory(rawData: string): Promise<VaccineHistoryResult> {
+  async parseVaccineHistory(rawData: string, ageYears: number, ageMonths: number): Promise<VaccineHistoryResult> {
+    // Calculate birth date from provided age
+    const today = new Date();
+    const birthDate = new Date(today);
+    birthDate.setFullYear(today.getFullYear() - ageYears);
+    birthDate.setMonth(today.getMonth() - ageMonths);
+    
     const prompt = `You are a medical AI assistant specializing in parsing vaccine history data. Parse the following unstructured vaccine history text and return structured data in JSON format.
 
-The input contains vaccine information with dates and patient ages. Parse each vaccine entry and extract:
+The patient is currently ${ageYears} years and ${ageMonths} months old (born ${birthDate.toISOString().split('T')[0]}).
+
+The input contains vaccine information with dates. Parse each vaccine entry and extract:
 1. Vaccine name (standardize to CDC nomenclature)
 2. All administration dates
-3. Patient age at each dose
+3. Calculate patient age at each dose based on the birth date: ${birthDate.toISOString().split('T')[0]}
 4. Determine series completion status based on typical vaccine schedules
 
 Input text:
@@ -23,8 +31,8 @@ ${rawData}
 Please return a JSON object with this exact structure:
 {
   "patientInfo": {
-    "dateOfBirth": "YYYY-MM-DD or null if cannot determine",
-    "currentAge": "readable age string or null",
+    "dateOfBirth": "${birthDate.toISOString().split('T')[0]}",
+    "currentAge": "${ageYears} years${ageMonths > 0 ? ` ${ageMonths} months` : ''}",
     "totalVaccines": number_of_vaccine_types
   },
   "vaccines": [
