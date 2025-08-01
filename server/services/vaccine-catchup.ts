@@ -12,6 +12,7 @@ import {
 
 interface VaccineDoseInfo {
   date: Date;
+  product?: string; // Optional product information
 }
 
 // Vaccine name normalization is now handled by the centralized vaccine-name-mapper
@@ -123,18 +124,24 @@ export class VaccineCatchUpService {
         break;
 
       case 'rotavirus':
+        // Get CDC rules for rotavirus
+        const rotavirusCdcRules = getVaccineRules(normalizedName);
+        
+        // Determine product from history or default to unknown
+        const rotavirusProduct = doses.length > 0 && doses[0].product ? doses[0].product : 'Unknown';
+        const productVariant = rotavirusCdcRules?.productVariants?.[rotavirusProduct] || rotavirusCdcRules?.productVariants?.['Unknown'];
+        const requiredDoses = productVariant?.doses || 3; // Default to 3 per CDC
+        
         if (currentAgeMonths > 8) {
           recommendation = 'Past maximum age (8 months) for rotavirus series';
           seriesComplete = true;
           notes.push('Rotavirus vaccine not recommended after 8 months of age');
-        } else if (numDoses >= 3) {
+        } else if (numDoses >= requiredDoses) {
           recommendation = 'Rotavirus series complete';
           seriesComplete = true;
-        } else if (numDoses >= 2 && currentAgeMonths >= 6) {
-          // Some brands only need 2 doses
-          recommendation = 'Rotavirus series may be complete (depends on vaccine brand)';
-          seriesComplete = true;
-          notes.push('RotaTeq requires 3 doses, Rotarix requires 2 doses');
+          if (productVariant?.notes) {
+            notes.push(...productVariant.notes);
+          }
         } else if (numDoses === 0) {
           if (currentAgeMonths > 3.5) { // 14 weeks + 6 days
             recommendation = 'Past maximum age for first rotavirus dose';
@@ -143,6 +150,9 @@ export class VaccineCatchUpService {
           } else if (currentAgeMonths >= 1.5) { // 6 weeks
             recommendation = 'Give rotavirus dose 1 now';
             notes.push('Minimum age: 6 weeks');
+            if (productVariant?.notes) {
+              notes.push(...productVariant.notes);
+            }
           } else {
             const nextDate = this.addDays(birthDate, 42); // 6 weeks
             recommendation = `Give rotavirus dose 1 on or after ${this.formatDate(nextDate)}`;
@@ -150,11 +160,14 @@ export class VaccineCatchUpService {
             notes.push('Wait until 6 weeks of age');
           }
         } else {
-          const nextDate = this.addDays(sortedDoses[numDoses - 1].date, 28); // 4 weeks minimum
+          const intervals = productVariant?.minimumIntervals || [28, 28];
+          const nextInterval = intervals[numDoses - 1] || 28;
+          const nextDate = this.addDays(sortedDoses[numDoses - 1].date, nextInterval);
+          
           if (currentDate >= nextDate && currentAgeMonths <= 8) {
             recommendation = `Give rotavirus dose ${numDoses + 1} now`;
-            if (numDoses === 2) {
-              notes.push('This may be the final dose depending on vaccine brand');
+            if (productVariant?.notes) {
+              notes.push(...productVariant.notes);
             }
           } else if (currentAgeMonths > 8) {
             recommendation = 'Past maximum age for rotavirus; series incomplete';
@@ -162,7 +175,7 @@ export class VaccineCatchUpService {
           } else {
             recommendation = `Give rotavirus dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
             nextDoseDate = this.formatDate(nextDate);
-            notes.push('Minimum 4 weeks between doses');
+            notes.push(`Minimum ${nextInterval} days between doses`);
           }
         }
         break;
@@ -470,9 +483,21 @@ export class VaccineCatchUpService {
 
       case 'var':
       case 'varicella':
+        // Get CDC rules for varicella
+        const varicellaRules = getVaccineRules('varicella');
         const varTotalDoses = 2;
         const varMinAge = 365; // 12 months
-        const varInterval = 28; // 4 weeks minimum for all ages per CDC 2025
+        
+        // Get age-dependent interval - 3 months if <13y, 4 weeks if ≥13y
+        const getVaricellaInterval = () => {
+          if (typeof varicellaRules?.minimumIntervals === 'function') {
+            const intervals = varicellaRules.minimumIntervals(currentAgeYears);
+            return intervals[0] || 28;
+          }
+          return 28; // Default to 4 weeks
+        };
+        
+        const varInterval = getVaricellaInterval();
         
         if (numDoses >= varTotalDoses) {
           recommendation = 'Varicella series complete';
@@ -481,7 +506,11 @@ export class VaccineCatchUpService {
         } else if (numDoses === 0) {
           if (currentAgeDays >= varMinAge) {
             recommendation = 'Give varicella dose 1 now';
-            notes.push('Schedule: Dose 1 → 4 weeks minimum → Dose 2');
+            if (currentAgeYears < 13) {
+              notes.push('Schedule: Dose 1 → 3 months minimum → Dose 2');
+            } else {
+              notes.push('Schedule: Dose 1 → 4 weeks minimum → Dose 2');
+            }
           } else {
             const nextDate = this.addDays(birthDate, varMinAge);
             recommendation = `Give varicella dose 1 on or after ${this.formatDate(nextDate)}`;
@@ -502,7 +531,8 @@ export class VaccineCatchUpService {
             recommendation = `Give varicella dose 2 on or after ${this.formatDate(nextDate)} (final dose)`;
             nextDoseDate = this.formatDate(nextDate);
           }
-          notes.push('Minimum interval: 4 weeks between doses');
+          const intervalText = currentAgeYears < 13 ? '3 months' : '4 weeks';
+          notes.push(`Minimum interval: ${intervalText} between doses`);
         }
         break;
 
@@ -736,15 +766,46 @@ export class VaccineCatchUpService {
         break;
 
       case 'influenza':
+        // Get CDC rules for influenza
+        const fluRules = getVaccineRules(normalizedName);
+        
+        // Determine current flu season (July 1 - June 30)
+        const getCurrentSeason = (date: Date) => {
+          const year = date.getFullYear();
+          const month = date.getMonth();
+          return month >= 6 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+        };
+        
+        const currentSeason = getCurrentSeason(currentDate);
+        const dosesThisSeason = doses.filter(dose => {
+          const doseSeason = getCurrentSeason(dose.date);
+          return doseSeason === currentSeason;
+        }).length;
+        
         if (currentAgeMonths < 6) {
           recommendation = 'Influenza vaccine not recommended under 6 months';
           notes.push('Minimum age: 6 months');
+        } else if (dosesThisSeason > 0) {
+          recommendation = 'Influenza vaccine for current season already received';
+          seriesComplete = true;
+          notes.push(`Current season (${currentSeason}) dose complete`);
         } else {
-          recommendation = 'Give annual influenza vaccine (current season)';
-          notes.push('Annual influenza vaccination recommended for all ≥6 months');
+          // Check if child <9 years needs 2 doses
           if (currentAgeYears < 9) {
-            notes.push('Children <9 years may need 2 doses if first time receiving or incomplete previous season');
+            const totalLifetimeDoses = doses.length;
+            if (totalLifetimeDoses < 2) {
+              if (dosesThisSeason === 0) {
+                recommendation = 'Give first influenza dose of season now';
+                notes.push('First-time recipients <9 years need 2 doses, 4 weeks apart');
+              }
+            } else {
+              recommendation = 'Give annual influenza vaccine now';
+              notes.push('Previously vaccinated: only 1 dose needed this season');
+            }
+          } else {
+            recommendation = 'Give annual influenza vaccine now';
           }
+          notes.push(`Annual vaccination recommended for ${currentSeason} season`);
         }
         break;
 

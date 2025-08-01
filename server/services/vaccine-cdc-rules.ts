@@ -19,10 +19,16 @@ export interface SpecialConditions {
   chronicKidneyDisease?: boolean;
 }
 
+export interface ProductVariant {
+  doses: number;
+  minimumIntervals: number[]; // in days
+  notes?: string[];
+}
+
 export interface CDCVaccineRules {
   minimumAge: number; // in days
   dosesRequired: number | ((age: number) => number);
-  minimumIntervals: number[]; // in days
+  minimumIntervals: number[] | ((ageYears: number) => number[]); // in days - can be age-dependent
   maximumAge?: number; // in days
   contraindications: string[];
   precautions: string[];
@@ -31,6 +37,9 @@ export interface CDCVaccineRules {
     modification: string;
   }[];
   notes: string[];
+  productVariants?: Record<string, ProductVariant>; // Product-specific schedules
+  catchUpRules?: Record<string, any>; // Age-specific catch-up rules
+  isAnnual?: boolean; // For seasonal vaccines like flu
 }
 
 // Grace period: doses given ≤4 days early are valid
@@ -77,9 +86,26 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
   
   'rotavirus': {
     minimumAge: 42, // 6 weeks
-    dosesRequired: (age) => age <= 104 ? 2 : 0, // 2 or 3 doses depending on product
-    minimumIntervals: [28], // 4 weeks
+    dosesRequired: 3, // Default to most conservative per CDC if product unknown
+    minimumIntervals: [28, 28], // 4 weeks between doses
     maximumAge: 238, // 8 months 0 days - do not start series
+    productVariants: {
+      'Rotarix': { 
+        doses: 2, 
+        minimumIntervals: [28], // 4 weeks
+        notes: ["2-dose series: doses at 2 and 4 months"]
+      },
+      'RotaTeq': { 
+        doses: 3, 
+        minimumIntervals: [28, 28], // 4 weeks each
+        notes: ["3-dose series: doses at 2, 4, and 6 months"]
+      },
+      'Unknown': { 
+        doses: 3, 
+        minimumIntervals: [28, 28], // Default to 3-dose per CDC
+        notes: ["If product unknown or mixed, complete 3-dose series"]
+      }
+    },
     contraindications: [
       "Severe allergic reaction to previous dose",
       "Severe combined immunodeficiency (SCID)",
@@ -242,6 +268,7 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
     minimumAge: 180, // 6 months
     dosesRequired: 1, // Annual
     minimumIntervals: [],
+    isAnnual: true, // Seasonal vaccine
     contraindications: [
       "Severe allergic reaction to previous dose",
       "Severe egg allergy for egg-based vaccines (use cell-culture or recombinant)"
@@ -287,7 +314,7 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
   'varicella': {
     minimumAge: 365, // 12 months
     dosesRequired: 2,
-    minimumIntervals: [28], // 4 weeks minimum for all ages per 2025 CDC
+    minimumIntervals: (ageYears: number) => ageYears < 13 ? [90] : [28], // 3 months if <13y, 4 weeks if ≥13y
     contraindications: [
       "Severe allergic reaction to previous dose",
       "Severe immunodeficiency",
@@ -306,7 +333,7 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
     notes: [
       "Dose 1 at 12-15 months",
       "Dose 2 at 4-6 years",
-      "Minimum interval 4 weeks for all ages"
+      "Interval: 3 months if <13 years; 4 weeks if ≥13 years"
     ]
   },
   
@@ -406,11 +433,26 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
   
   'covid19': {
     minimumAge: 180, // 6 months
-    dosesRequired: (age) => {
-      if (age < 1460) return 2; // <4 years: 2-3 doses depending on product
-      return 1; // ≥5 years: 1 dose
-    },
+    dosesRequired: 1, // Default, varies by age and product
     minimumIntervals: [28], // 4 weeks minimum
+    productVariants: {
+      'Pfizer': {
+        doses: 3, // For 6m-4y: 3 doses; ≥5y: 1 dose
+        minimumIntervals: [21, 56], // 21 days, then 56 days for 6m-4y
+        notes: ["6 months-4 years: 3-dose series (0, 3, 8 weeks)", "≥5 years: 1 dose"]
+      },
+      'Moderna': {
+        doses: 2, // For 6m-4y: 2 doses; ≥5y: 1 dose
+        minimumIntervals: [28], // 28 days for 6m-4y
+        notes: ["6 months-4 years: 2-dose series (0, 4 weeks)", "≥5 years: 1 dose"]
+      },
+      'Unknown': {
+        doses: 1,
+        minimumIntervals: [28],
+        notes: ["Follow current CDC guidance for specific product"]
+      }
+    },
+    isAnnual: true, // Updated annually like influenza
     contraindications: [
       "Severe allergic reaction to previous dose",
       "Known allergy to vaccine component"

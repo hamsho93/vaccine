@@ -33,6 +33,21 @@ The system is built as a full-stack web application with a React frontend for da
   - Frontend UI displays contraindications, precautions, and special situations with color-coded alerts
   - Interactive special conditions selection before generating catch-up recommendations
 
+## Advanced CDC Compliance Enhancements (Aug 1, 2025)
+- **Product-Specific Vaccine Logic**: Enhanced CDCVaccineRules interface to support product variants (e.g., Rotarix 2-dose vs RotaTeq 3-dose for Rotavirus)
+- **Age-Dependent Intervals**: Implemented dynamic interval calculations based on patient age (e.g., Varicella: 3 months if <13 years, 4 weeks if ≥13 years)
+- **Seasonal Vaccine Tracking**: Added isAnnual flag for seasonal vaccines with proper flu season detection (July 1 - June 30)
+- **Enhanced Service Architecture**: 
+  - vaccine-catchup.ts serves as the recommendation engine (the "chef")
+  - vaccine-cdc-rules.ts acts as the CDC guidelines database (the "recipe book")
+  - Improved separation of concerns between rule definitions and recommendation logic
+- **Product Variants Implemented**:
+  - Rotavirus: Rotarix (2 doses), RotaTeq (3 doses), Unknown (3 doses default)
+  - COVID-19: Pfizer (3 doses for 6m-4y), Moderna (2 doses for 6m-4y)
+  - Support for future product-specific variations
+- **Smart Interval Calculations**: Functions that return age-appropriate intervals dynamically based on patient's current age
+- **Comprehensive Testing**: Verified age-dependent intervals and product-specific logic work correctly in live implementation
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
