@@ -692,7 +692,12 @@ export class VaccineCatchUpService {
             notes.push('Booster may be needed for high-risk individuals');
           } else if (numDoses === 0) {
             recommendation = 'Give MenACWY dose 1 now';
-            notes.push('Routine immunization at 11-12 years');
+            // Only show routine guidance if patient is close to routine age
+            if (currentAgeYears <= 13) {
+              notes.push('Routine immunization at 11-12 years');
+            } else {
+              notes.push('Catch-up vaccination for missed MenACWY dose');
+            }
           } else if (numDoses === 1) {
             if (currentAgeYears >= 16) {
               recommendation = 'Give MenACWY dose 2 now (booster)';
@@ -733,7 +738,12 @@ export class VaccineCatchUpService {
           }
         } else if (currentAgeYears >= 10) {
           recommendation = 'MenB available for high-risk individuals';
-          notes.push('Routine vaccination preferred at 16-18 years');
+          // Only show routine guidance if patient is close to routine age
+          if (currentAgeYears <= 18) {
+            notes.push('Routine vaccination preferred at 16-18 years');
+          } else {
+            notes.push('MenB vaccination generally not recommended after age 23');
+          }
           notes.push('May be given to high-risk individuals ≥10 years');
         } else {
           recommendation = 'MenB not routinely recommended under 10 years';
