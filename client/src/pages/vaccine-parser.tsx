@@ -29,8 +29,6 @@ export default function VaccineParser() {
     resolver: zodResolver(ParseVaccineHistoryRequest),
     defaultValues: {
       vaccineData: "",
-      ageYears: 0,
-      ageMonths: 0,
     },
   });
 
@@ -88,26 +86,17 @@ export default function VaccineParser() {
   };
 
   const generateCatchUpRecommendations = () => {
-    if (!result) {
+    if (!result || !result.patientInfo.dateOfBirth) {
       toast({
-        title: "No vaccine data",
-        description: "Please parse vaccine history first",
+        title: "Date of birth required",
+        description: "Cannot generate catch-up recommendations without patient's date of birth",
         variant: "destructive",
       });
       return;
     }
 
-    // Calculate birth date from the age provided during parsing
-    const ageYears = form.getValues('ageYears');
-    const ageMonths = form.getValues('ageMonths');
-    
-    const today = new Date();
-    const birthDate = new Date(today);
-    birthDate.setFullYear(today.getFullYear() - ageYears);
-    birthDate.setMonth(today.getMonth() - ageMonths);
-    
     const catchUpRequest: CatchUpRequest = {
-      birthDate: birthDate.toISOString().split('T')[0],
+      birthDate: result.patientInfo.dateOfBirth,
       currentDate: new Date().toISOString().split('T')[0],
       vaccineHistory: result.vaccines.map(vaccine => ({
         vaccineName: vaccine.standardName,
@@ -243,93 +232,37 @@ export default function VaccineParser() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="space-y-4">
-                  {/* Age Input Fields */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="ageYears"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Patient Age - Years <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <input
-                              type="number"
-                              {...field}
-                              onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                              min="0"
-                              max="100"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Years"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="ageMonths"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Patient Age - Months <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <input
-                              type="number"
-                              {...field}
-                              onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                              min="0"
-                              max="11"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Months"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="text-sm text-slate-600 bg-blue-50 p-3 rounded-md">
-                    <Info className="inline h-4 w-4 mr-1" />
-                    Enter the patient's current age. This will be used to calculate appropriate vaccine recommendations.
-                  </div>
-
-                  {/* Vaccine History Text */}
-                  <FormField
-                    control={form.control}
-                    name="vaccineData"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Vaccine History Text <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            rows={12}
-                            className="font-mono text-sm"
-                            placeholder={`Example:
-DTaP: 1/19/2011, 2/17/2011, 4/7/2011, 11/19/2013, 11/19/2014
-Hep A: 9/27/2011, 11/14/2012
-Hep B: 9/21/2010, 4/7/2011, 7/25/2011
-HiB: 1/19/2011, 2/17/2011, 4/7/2011, 8/20/2012
-MMR: 8/20/2012, 8/29/2017
-Pneumococcal: 1/19/2011, 2/17/2011, 7/25/2011, 11/19/2014
-Polio: 1/19/2011, 2/17/2011, 11/19/2013, 11/19/2014
-Rotavirus: 1/19/2011, 2/17/2011, 4/7/2011
-Tdap: 7/31/2025
-Varicella: 8/20/2012, 2/18/2019`}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="vaccineData"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Vaccine History Text <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          rows={12}
+                          className="font-mono text-sm"
+                          placeholder={`Example:
+DTaP, Unspecified1/19/2011 (3 m.o.)2/17/2011 (4 m.o.)4/7/2011 (6 m.o.)11/19/2013 (3 y.o.)
+11/19/2014 (4 y.o.)
+Hep A, Unspecified9/27/2011 (12 m.o.)11/14/2012 (2 y.o.)
+Hep B, Unspecified9/21/2010 (0 days)4/7/2011 (6 m.o.)7/25/2011 (10 m.o.)
+HiB1/19/2011 (3 m.o.)2/17/2011 (4 m.o.)4/7/2011 (6 m.o.)8/20/2012 (22 m.o.)
+MMR8/20/2012 (22 m.o.)8/29/2017 (6 y.o.)
+Pneumococcal Conjugate, Unspecified1/19/2011 (3 m.o.)2/17/2011 (4 m.o.)7/25/2011 (10 m.o.)11/19/2014 (4 y.o.)
+Polio, Unspecified1/19/2011 (3 m.o.)2/17/2011 (4 m.o.)11/19/2013 (3 y.o.)11/19/2014 (4 y.o.)
+Rotavirus, Unspecified1/19/2011 (3 m.o.)2/17/2011 (4 m.o.)4/7/2011 (6 m.o.)
+Tdap7/31/2025 (14 y.o.)
+Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <Alert>
                   <Info className="h-4 w-4" />
