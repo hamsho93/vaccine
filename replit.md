@@ -4,6 +4,12 @@ This is a comprehensive medical vaccine history parsing and catch-up planning ap
 
 The system is built as a full-stack web application with a React frontend for data input and visualization, and a Node.js/Express backend that handles both AI parsing logic and catch-up recommendation calculations. It's designed specifically for medical professionals who need to quickly process vaccine histories and generate catch-up plans based on current CDC guidelines (2025.1).
 
+## Recent Major Improvements (Aug 1, 2025)
+- **Smart vaccine name recognition**: Comprehensive mapping system recognizes 80+ vaccine name variations (RV→Rotavirus, PCV→Pneumococcal, etc.)
+- **Age-based recommendation engine**: Intelligent catch-up logic considers patient age, vaccine age limits, and minimum intervals
+- **Enhanced clinical accuracy**: Detailed recommendations with specific CDC-compliant intervals and age restrictions
+- **Database integration**: PostgreSQL storage with session-based tracking for anonymous usage without requiring user registration
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
