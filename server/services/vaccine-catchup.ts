@@ -309,19 +309,22 @@ export class VaccineCatchUpService {
         } else if (numDoses === 0) {
           if (currentAgeMonths >= 1.5) { // 6 weeks
             recommendation = 'Give DTaP dose 1 now';
+            notes.push('Schedule: Dose 1 → 4 weeks → Dose 2 → 4 weeks → Dose 3 → 6 months → Dose 4 → 6 months → Dose 5');
           } else {
             const nextDate = this.addDays(birthDate, 42); // 6 weeks
             recommendation = `Give DTaP dose 1 on or after ${this.formatDate(nextDate)}`;
             nextDoseDate = this.formatDate(nextDate);
+            notes.push('Minimum age: 6 weeks');
           }
-          notes.push('Minimum age: 6 weeks');
+          notes.push('Complete series: 5 doses at 2, 4, 6, 15-18 months, and 4-6 years');
         } else {
           let interval = 28; // 4 weeks default
           if (numDoses === 3) {
             interval = 183; // 6 months for dose 4
-            notes.push('4th dose should be given at 15-18 months');
+            notes.push('4th dose: minimum 6 months after dose 3, given at 15-18 months');
           } else if (numDoses === 4) {
             interval = 183; // 6 months for dose 5
+            notes.push('5th dose: minimum 6 months after dose 4, given at 4-6 years (school entry)');
           }
           
           const nextDate = this.addDays(sortedDoses[numDoses - 1].date, interval);
@@ -333,7 +336,8 @@ export class VaccineCatchUpService {
           }
           
           if (numDoses < 3) {
-            notes.push('Minimum 4 weeks between doses 1-3');
+            notes.push('Primary series: minimum 4 weeks between doses 1-3');
+            notes.push(`After dose ${numDoses + 1}: wait ${numDoses === 2 ? '6 months for dose 4' : '4 weeks for next dose'}`);
           }
         }
         break;
@@ -424,12 +428,14 @@ export class VaccineCatchUpService {
         } else if (numDoses === 0) {
           if (currentAgeMonths >= 1.5) { // 6 weeks
             recommendation = 'Give pneumococcal (PCV) dose 1 now';
+            notes.push('Schedule: Doses at 2, 4, 6, and 12-15 months (4-dose series)');
           } else {
             const nextDate = this.addDays(birthDate, 42); // 6 weeks
             recommendation = `Give pneumococcal (PCV) dose 1 on or after ${this.formatDate(nextDate)}`;
             nextDoseDate = this.formatDate(nextDate);
+            notes.push('Minimum age: 6 weeks');
           }
-          notes.push('Use PCV15 or PCV20; minimum age: 6 weeks');
+          notes.push('Use PCV15 or PCV20; routine schedule at 2, 4, 6, 12-15 months');
         } else {
           let interval = 28; // 4 weeks for doses 1-3 under 12 months
           
@@ -445,8 +451,10 @@ export class VaccineCatchUpService {
             nextDoseDate = this.formatDate(nextDate);
           }
           
-          if (numDoses === 3 && currentAgeMonths >= 12) {
-            notes.push('Final booster dose at 12-15 months');
+          if (numDoses < 3) {
+            notes.push('Primary series: minimum 4 weeks between doses if <12 months old');
+          } else if (numDoses === 3 && currentAgeMonths >= 12) {
+            notes.push('Final booster: minimum 8 weeks after dose 3, given at 12-15 months');
           }
         }
         break;
@@ -488,24 +496,29 @@ export class VaccineCatchUpService {
         const mmrInterval = 28; // 4 weeks
         
         if (numDoses >= mmrTotalDoses) {
-          recommendation = 'Series complete';
+          recommendation = 'MMR series complete';
           seriesComplete = true;
+          notes.push('Two doses provide lifelong protection');
         } else if (numDoses === 0) {
           if (currentAgeDays >= mmrMinAge) {
-            recommendation = 'Give dose 1 now';
+            recommendation = 'Give MMR dose 1 now';
+            notes.push('Schedule: Dose 1 at 12-15 months → 4 weeks → Dose 2 at 4-6 years');
           } else {
             const nextDate = this.addDays(birthDate, mmrMinAge);
-            recommendation = `Give dose 1 on or after ${this.formatDate(nextDate)}`;
+            recommendation = `Give MMR dose 1 on or after ${this.formatDate(nextDate)}`;
             nextDoseDate = this.formatDate(nextDate);
+            notes.push('Minimum age: 12 months');
           }
+          notes.push('Routine schedule: 12-15 months and 4-6 years');
         } else {
           const nextDate = this.addDays(sortedDoses[0].date, mmrInterval);
           if (currentDate >= nextDate) {
-            recommendation = 'Give dose 2 now';
+            recommendation = 'Give MMR dose 2 now (final dose)';
           } else {
-            recommendation = `Give dose 2 on or after ${this.formatDate(nextDate)}`;
+            recommendation = `Give MMR dose 2 on or after ${this.formatDate(nextDate)} (final dose)`;
             nextDoseDate = this.formatDate(nextDate);
           }
+          notes.push('Minimum interval: 4 weeks between doses');
         }
         break;
 
@@ -516,23 +529,36 @@ export class VaccineCatchUpService {
         const varInterval = currentAgeDays >= 4745 ? 28 : 84; // 13 yrs, 4 weeks vs 12 weeks
         
         if (numDoses >= varTotalDoses) {
-          recommendation = 'Series complete';
+          recommendation = 'Varicella series complete';
           seriesComplete = true;
+          notes.push('Two doses provide excellent protection against chickenpox');
         } else if (numDoses === 0) {
           if (currentAgeDays >= varMinAge) {
-            recommendation = 'Give dose 1 now';
+            recommendation = 'Give varicella dose 1 now';
+            if (currentAgeYears >= 13) {
+              notes.push('Schedule for ≥13 years: Dose 1 → 4 weeks → Dose 2');
+            } else {
+              notes.push('Schedule for <13 years: Dose 1 → 3 months → Dose 2');
+            }
           } else {
             const nextDate = this.addDays(birthDate, varMinAge);
-            recommendation = `Give dose 1 on or after ${this.formatDate(nextDate)}`;
+            recommendation = `Give varicella dose 1 on or after ${this.formatDate(nextDate)}`;
             nextDoseDate = this.formatDate(nextDate);
+            notes.push('Minimum age: 12 months');
           }
+          notes.push('Routine schedule: 12-15 months and 4-6 years');
         } else {
           const nextDate = this.addDays(sortedDoses[0].date, varInterval);
           if (currentDate >= nextDate) {
-            recommendation = 'Give dose 2 now';
+            recommendation = 'Give varicella dose 2 now (final dose)';
           } else {
-            recommendation = `Give dose 2 on or after ${this.formatDate(nextDate)}`;
+            recommendation = `Give varicella dose 2 on or after ${this.formatDate(nextDate)} (final dose)`;
             nextDoseDate = this.formatDate(nextDate);
+          }
+          if (currentAgeYears >= 13) {
+            notes.push('Minimum interval for ≥13 years: 4 weeks between doses');
+          } else {
+            notes.push('Minimum interval for <13 years: 3 months between doses');
           }
         }
         break;
@@ -580,31 +606,65 @@ export class VaccineCatchUpService {
 
       case 'hpv':
         const hpvMinAge = 3285; // 9 years
-        const hpvTotalDoses = currentAgeDays > 5475 ? 3 : 2; // 3 doses if started at 15+ years
-        const hpvIntervals = [28, 152]; // 4w, 5m for 3-dose
+        const isOlderStart = currentAgeYears >= 15; // Started at 15+ years needs 3 doses
+        const hpvTotalDoses = isOlderStart ? 3 : 2;
         
-        if (currentAgeDays > 9855) { // >27 years
+        if (currentAgeYears > 26) {
           recommendation = 'Not routinely recommended after 26 years; discuss shared decision';
-          notes.push('Consult CDC guidelines for adults >26 years');
+          notes.push('HPV vaccine most effective when given before exposure to HPV');
+          notes.push('Adults 27-45 years: shared clinical decision-making with provider');
         } else if (numDoses >= hpvTotalDoses) {
-          recommendation = 'Series complete';
+          recommendation = 'HPV series complete';
           seriesComplete = true;
+          notes.push('Provides protection against HPV types that cause most cancers and genital warts');
         } else if (numDoses === 0) {
-          if (currentAgeDays >= hpvMinAge) {
-            recommendation = 'Give dose 1 now';
+          if (currentAgeYears >= 9) {
+            recommendation = 'Give HPV dose 1 now';
+            if (currentAgeYears < 15) {
+              notes.push('2-dose schedule: Dose 1 → 6-12 months → Dose 2');
+            } else {
+              notes.push('3-dose schedule (≥15 years): Dose 1 → 1-2 months → Dose 2 → 6 months → Dose 3');
+            }
+            notes.push('Routine vaccination: 11-12 years (can start at 9 years)');
           } else {
             const nextDate = this.addDays(birthDate, hpvMinAge);
-            recommendation = `Give dose 1 on or after ${this.formatDate(nextDate)}`;
+            recommendation = `Give HPV dose 1 on or after ${this.formatDate(nextDate)}`;
             nextDoseDate = this.formatDate(nextDate);
+            notes.push('Minimum age: 9 years');
           }
-        } else {
-          const nextDate = this.addDays(sortedDoses[numDoses - 1].date, hpvIntervals[numDoses - 1]);
-          if (currentDate >= nextDate) {
-            recommendation = `Give dose ${numDoses + 1} now`;
+        } else if (numDoses === 1) {
+          if (isOlderStart) {
+            // 3-dose schedule: 1-2 months after dose 1
+            const nextDate = this.addDays(sortedDoses[0].date, 28); // minimum 1 month
+            if (currentDate >= nextDate) {
+              recommendation = 'Give HPV dose 2 now';
+              notes.push('Next: Wait 6 months after dose 1 for dose 3 (final)');
+            } else {
+              recommendation = `Give HPV dose 2 on or after ${this.formatDate(nextDate)}`;
+              nextDoseDate = this.formatDate(nextDate);
+            }
+            notes.push('3-dose schedule: minimum 1 month between doses 1-2');
           } else {
-            recommendation = `Give dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
+            // 2-dose schedule: 6-12 months after dose 1
+            const nextDate = this.addDays(sortedDoses[0].date, 183); // 6 months
+            if (currentDate >= nextDate) {
+              recommendation = 'Give HPV dose 2 now (final dose)';
+            } else {
+              recommendation = `Give HPV dose 2 on or after ${this.formatDate(nextDate)} (final dose)`;
+              nextDoseDate = this.formatDate(nextDate);
+            }
+            notes.push('2-dose schedule: 6-12 months between doses');
+          }
+        } else if (numDoses === 2 && isOlderStart) {
+          // Final dose for 3-dose schedule: 6 months after dose 1
+          const nextDate = this.addDays(sortedDoses[0].date, 183); // 6 months from dose 1
+          if (currentDate >= nextDate) {
+            recommendation = 'Give HPV dose 3 now (final dose)';
+          } else {
+            recommendation = `Give HPV dose 3 on or after ${this.formatDate(nextDate)} (final dose)`;
             nextDoseDate = this.formatDate(nextDate);
           }
+          notes.push('Final dose: minimum 6 months after dose 1');
         }
         break;
 
