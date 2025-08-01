@@ -509,7 +509,12 @@ export class VaccineCatchUpService {
             nextDoseDate = this.formatDate(nextDate);
             notes.push('Minimum age: 12 months');
           }
-          notes.push('Routine schedule: 12-15 months and 4-6 years');
+          // Only show routine guidance if patient is close to routine age for MMR
+          if (currentAgeYears <= 6) {
+            notes.push('Routine schedule: 12-15 months and 4-6 years');
+          } else {
+            notes.push('Catch-up vaccination for missed MMR doses');
+          }
         } else {
           const nextDate = this.addDays(sortedDoses[0].date, mmrInterval);
           if (currentDate >= nextDate) {
@@ -546,7 +551,12 @@ export class VaccineCatchUpService {
             nextDoseDate = this.formatDate(nextDate);
             notes.push('Minimum age: 12 months');
           }
-          notes.push('Routine schedule: 12-15 months and 4-6 years');
+          // Only show routine guidance if patient is close to routine age for Varicella
+          if (currentAgeYears <= 6) {
+            notes.push('Routine schedule: 12-15 months and 4-6 years');
+          } else {
+            notes.push('Catch-up vaccination for missed varicella doses');
+          }
         } else {
           const nextDate = this.addDays(sortedDoses[0].date, varInterval);
           if (currentDate >= nextDate) {
@@ -625,12 +635,18 @@ export class VaccineCatchUpService {
             } else {
               notes.push('3-dose schedule (≥15 years): Dose 1 → 1-2 months → Dose 2 → 6 months → Dose 3');
             }
-            notes.push('Routine vaccination: 11-12 years (can start at 9 years)');
+            // Only show routine guidance if patient is close to routine age
+            if (currentAgeYears <= 12) {
+              notes.push('Routine vaccination: 11-12 years (can start at 9 years)');
+            } else {
+              notes.push('Catch-up vaccination recommended through age 26');
+            }
           } else {
             const nextDate = this.addDays(birthDate, hpvMinAge);
             recommendation = `Give HPV dose 1 on or after ${this.formatDate(nextDate)}`;
             nextDoseDate = this.formatDate(nextDate);
             notes.push('Minimum age: 9 years');
+            notes.push('Routine vaccination: 11-12 years (can start at 9 years)');
           }
         } else if (numDoses === 1) {
           if (isOlderStart) {
