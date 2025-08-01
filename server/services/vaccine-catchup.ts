@@ -628,29 +628,38 @@ export class VaccineCatchUpService {
             notes.push('Booster may be needed for high-risk individuals');
           } else if (numDoses === 0) {
             recommendation = 'Give MenACWY dose 1 now';
-            // Only show routine guidance if patient is close to routine age
+            // Only show age-appropriate notes
             if (currentAgeYears <= 13) {
               notes.push('Routine immunization at 11-12 years');
+            } else if (currentAgeYears >= 16) {
+              notes.push('Catch-up vaccination - giving first dose now');
+              notes.push('Will need second dose at least 8 weeks later');
             } else {
               notes.push('Catch-up vaccination for missed MenACWY dose');
+              notes.push(`Booster dose scheduled at age 16`);
             }
           } else if (numDoses === 1) {
             if (currentAgeYears >= 16) {
               recommendation = 'Give MenACWY dose 2 now (booster)';
+              notes.push('Second dose completing the series');
             } else {
               const boosterDate = this.addDays(birthDate, 16 * 365);
               recommendation = `Give MenACWY booster on or after ${this.formatDate(boosterDate)}`;
               nextDoseDate = this.formatDate(boosterDate);
+              notes.push(`Booster dose scheduled at age 16 (${this.formatDate(boosterDate)})`);
             }
-            notes.push('Booster dose at 16 years');
           }
         } else if (currentAgeMonths >= 2) {
           recommendation = 'MenACWY available for high-risk children';
-          notes.push('Routine vaccination begins at 11-12 years');
-          notes.push('May be given to high-risk children as early as 2 months');
+          if (currentAgeYears < 11) {
+            notes.push('Routine vaccination begins at 11-12 years');
+            if (specialConditions && (specialConditions.asplenia || specialConditions.immunocompromised)) {
+              notes.push('High-risk condition present - consider vaccination now');
+            }
+          }
         } else {
           recommendation = 'MenACWY not recommended under 2 months';
-          notes.push('Routine vaccination begins at 11-12 years');
+          notes.push('Minimum age: 2 months for high-risk, 11 years for routine');
         }
         break;
 
@@ -700,15 +709,17 @@ export class VaccineCatchUpService {
           if (numDoses === 0) {
             if (specialConditions?.immunocompromised) {
               recommendation = 'Recommended: Give COVID-19 vaccine dose 1 (3-dose primary series for immunocompromised)';
-              notes.push('Immunocompromised: 3-dose primary series plus additional doses recommended');
+              notes.push('Immunocompromised patients: 3-dose primary series recommended');
+              notes.push('Additional doses may be needed based on current CDC guidance');
               decisionType = 'risk-based';
             } else {
               recommendation = 'COVID-19 vaccine available through shared clinical decision-making';
-              notes.push('Discuss with healthcare provider based on individual risk and benefit');
+              notes.push('Discuss benefits and risks with healthcare provider');
+              notes.push('Vaccination decision should be based on individual circumstances');
             }
           } else {
             recommendation = 'Continue COVID-19 vaccination per current CDC guidance';
-            notes.push('Follow age-appropriate schedule');
+            notes.push('Follow age-appropriate schedule for additional doses');
           }
         } else {
           // Routine for 18 years
@@ -793,10 +804,8 @@ export class VaccineCatchUpService {
         specialSituations.push(...modifications);
       }
       
-      // Add CDC notes if available
-      if (cdcRules.notes.length > 0) {
-        notes.push(...cdcRules.notes);
-      }
+      // Don't add generic CDC notes - they're now handled specifically in each vaccine case
+      // Age-appropriate notes are generated dynamically based on patient's current situation
     }
     
     // Set decision type for COVID-19 based on age

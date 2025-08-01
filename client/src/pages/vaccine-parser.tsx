@@ -705,27 +705,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                       </div>
                     )}
 
-                    {rec.contraindications && rec.contraindications.length > 0 && (
-                      <div className="mt-2 text-xs text-red-700 bg-red-50 rounded p-2">
-                        <div className="font-medium mb-1">⚠️ Contraindications:</div>
-                        <ul className="list-disc pl-4 space-y-0.5">
-                          {rec.contraindications.map((contra, index) => (
-                            <li key={index}>{contra}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
 
-                    {rec.precautions && rec.precautions.length > 0 && (
-                      <div className="mt-2 text-xs text-orange-700 bg-orange-50 rounded p-2">
-                        <div className="font-medium mb-1">⚠️ Precautions:</div>
-                        <ul className="list-disc pl-4 space-y-0.5">
-                          {rec.precautions.map((precaution, index) => (
-                            <li key={index}>{precaution}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
 
                     {rec.specialSituations && rec.specialSituations.length > 0 && (
                       <div className="mt-2 text-xs text-purple-700 bg-purple-50 rounded p-2">

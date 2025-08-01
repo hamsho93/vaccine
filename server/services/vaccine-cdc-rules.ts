@@ -381,11 +381,7 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
         modification: "2-dose primary series 8 weeks apart"
       }
     ],
-    notes: [
-      "Routine dose 1 at 11-12 years",
-      "Routine dose 2 at 16 years",
-      "High-risk infants start at 2 months"
-    ]
+    notes: [] // Age-appropriate notes are now generated dynamically in vaccine-catchup.ts
   },
   
   'meningococcal_b': {
@@ -405,11 +401,7 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
         modification: "Recommended; 2 or 3 doses depending on product"
       }
     ],
-    notes: [
-      "Shared clinical decision-making for 16-23 years",
-      "Preferred age 16-18 years",
-      "High-risk conditions warrant routine use"
-    ]
+    notes: [] // Age-appropriate notes are now generated dynamically in vaccine-catchup.ts
   },
   
   'covid19': {
@@ -433,11 +425,7 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
         modification: "Additional doses recommended; 3-dose primary series plus additional doses"
       }
     ],
-    notes: [
-      "Shared clinical decision-making for 6 months-17 years",
-      "Routine for 18 years",
-      "Product-specific schedules apply"
-    ]
+    notes: [] // Age-appropriate notes are now generated dynamically in vaccine-catchup.ts
   }
 };
 
