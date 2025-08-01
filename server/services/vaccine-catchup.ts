@@ -22,16 +22,18 @@ const VACCINE_NAME_MAP: Record<string, string> = {
   'rotateq': 'rotavirus',
   'rotarix': 'rotavirus',
   
-  // DTaP variations
-  'dtap': 'dtap',
-  'dtp': 'dtap',
-  'diphtheria': 'dtap',
-  'tetanus': 'dtap',
-  'pertussis': 'dtap',
-  'whooping cough': 'dtap',
-  'dt': 'dtap',
-  'td': 'dtap',
-  'tdap': 'tdap',
+  // DTaP/Tdap variations - all map to the same vaccine series
+  'dtap': 'dtap_tdap',
+  'dtp': 'dtap_tdap',
+  'diphtheria': 'dtap_tdap',
+  'tetanus': 'dtap_tdap',
+  'pertussis': 'dtap_tdap',
+  'whooping cough': 'dtap_tdap',
+  'dt': 'dtap_tdap',
+  'td': 'dtap_tdap',
+  'tdap': 'dtap_tdap',
+  'diphtheria-tetanus-pertussis': 'dtap_tdap',
+  'diphtheria tetanus pertussis': 'dtap_tdap',
   
   // Haemophilus influenzae type b
   'hib': 'hib',
@@ -274,99 +276,124 @@ export class VaccineCatchUpService {
         }
         break;
 
-      case 'dtap':
+      case 'dtap_tdap':
+        // Smart DTaP/Tdap logic based on age and previous doses
         if (currentAgeYears >= 7) {
-          recommendation = 'Switch to Tdap/Td - DTaP not recommended after 7 years';
-          notes.push('DTaP should not be given to children 7 years or older');
-          if (numDoses < 3) {
-            notes.push('Complete primary series with Tdap, then give Td booster every 10 years');
-          }
-        } else if (numDoses >= 5) {
-          recommendation = 'DTaP series complete';
-          seriesComplete = true;
-          notes.push('Next dose due at 11-12 years (Tdap booster)');
-        } else if (numDoses === 4) {
-          const dose4Age = this.getAgeInDays(birthDate, sortedDoses[3].date);
-          const intervalFromDose3 = Math.floor((sortedDoses[3].date.getTime() - sortedDoses[2].date.getTime()) / (1000 * 60 * 60 * 24));
-          
-          if (dose4Age >= (4 * 365) && intervalFromDose3 >= 183) { // 4 years old, 6 months interval
-            recommendation = 'DTaP series complete (4 doses sufficient if dose 4 given after 4th birthday)';
-            seriesComplete = true;
-            notes.push('5th dose not needed if 4th dose given after 4th birthday');
-          } else {
-            const nextDate = this.addDays(sortedDoses[3].date, 183); // 6 months
-            const minAgeDate = this.addDays(birthDate, 4 * 365); // 4 years
-            const finalDate = new Date(Math.max(nextDate.getTime(), minAgeDate.getTime()));
+          // Age 7+ uses Tdap/Td schedule
+          if (numDoses >= 3) {
+            // Check if they've had Tdap (after age 7)
+            const tdapDoses = sortedDoses.filter(dose => {
+              const ageAtDose = this.getAgeInYears(birthDate, dose.date);
+              return ageAtDose >= 7;
+            });
             
-            if (currentDate >= finalDate) {
-              recommendation = 'Give DTaP dose 5 now (school entry dose)';
+            if (tdapDoses.length >= 1) {
+              // Already had Tdap, check for Td booster needs
+              const lastTdapDate = tdapDoses[tdapDoses.length - 1].date;
+              const tenYearsLater = this.addDays(lastTdapDate, 3650); // 10 years
+              
+              if (currentDate >= tenYearsLater) {
+                recommendation = 'Give Td booster now (10 years since last dose)';
+                notes.push('Td booster every 10 years after Tdap');
+              } else {
+                recommendation = 'Tdap/Td series up to date';
+                seriesComplete = true;
+                notes.push(`Next Td booster due ${this.formatDate(tenYearsLater)}`);
+              }
             } else {
-              recommendation = `Give DTaP dose 5 on or after ${this.formatDate(finalDate)}`;
-              nextDoseDate = this.formatDate(finalDate);
+              // Had DTaP doses but no Tdap yet
+              recommendation = 'Give Tdap now (one-time adolescent/adult dose)';
+              notes.push('Tdap replaces one Td booster for adolescents/adults');
+              notes.push('Previous DTaP doses count toward primary series');
             }
-            notes.push('5th dose recommended at 4-6 years for school entry');
-          }
-        } else if (numDoses === 0) {
-          if (currentAgeMonths >= 1.5) { // 6 weeks
-            recommendation = 'Give DTaP dose 1 now';
-            notes.push('Schedule: Dose 1 → 4 weeks → Dose 2 → 4 weeks → Dose 3 → 6 months → Dose 4 → 6 months → Dose 5');
+          } else if (numDoses === 0) {
+            // No previous doses, start catch-up
+            recommendation = 'Give Tdap dose 1 now';
+            notes.push('Catch-up schedule for 7-18 years: 3 doses total');
+            notes.push('Schedule: Dose 1 → 4 weeks → Dose 2 → 6 months → Dose 3');
           } else {
-            const nextDate = this.addDays(birthDate, 42); // 6 weeks
-            recommendation = `Give DTaP dose 1 on or after ${this.formatDate(nextDate)}`;
-            nextDoseDate = this.formatDate(nextDate);
-            notes.push('Minimum age: 6 weeks');
+            // Partial series, continue catch-up per CDC
+            const nextInterval = numDoses === 1 ? 28 : 183; // 4 weeks after dose 1, 6 months after dose 2
+            const nextDate = this.addDays(sortedDoses[numDoses - 1].date, nextInterval);
+            
+            if (currentDate >= nextDate) {
+              recommendation = `Give Tdap dose ${numDoses + 1} now`;
+            } else {
+              recommendation = `Give Tdap dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
+              nextDoseDate = this.formatDate(nextDate);
+            }
+            
+            if (numDoses === 1) {
+              notes.push('Minimum 4 weeks between doses 1-2');
+            } else if (numDoses === 2) {
+              notes.push('Minimum 6 months between doses 2-3 (final dose)');
+            }
           }
-          notes.push('Complete series: 5 doses at 2, 4, 6, 15-18 months, and 4-6 years');
         } else {
-          let interval = 28; // 4 weeks default
-          if (numDoses === 3) {
-            interval = 183; // 6 months for dose 4
-            notes.push('4th dose: minimum 6 months after dose 3, given at 15-18 months');
+          // Under age 7 - use DTaP schedule
+          if (numDoses >= 5) {
+            recommendation = 'DTaP series complete';
+            seriesComplete = true;
+            notes.push('Will need Tdap at age 11-12 years');
           } else if (numDoses === 4) {
-            interval = 183; // 6 months for dose 5
-            notes.push('5th dose: minimum 6 months after dose 4, given at 4-6 years (school entry)');
-          }
-          
-          const nextDate = this.addDays(sortedDoses[numDoses - 1].date, interval);
-          if (currentDate >= nextDate) {
-            recommendation = `Give DTaP dose ${numDoses + 1} now`;
+            const fourthDoseAge = this.getAgeInDays(birthDate, sortedDoses[3].date) / 365.25;
+            const intervalFromDose3 = Math.floor((sortedDoses[3].date.getTime() - sortedDoses[2].date.getTime()) / (1000 * 60 * 60 * 24));
+            
+            if (fourthDoseAge >= 4 && intervalFromDose3 >= 183) {
+              recommendation = 'DTaP series complete (4 doses sufficient if dose 4 given after 4th birthday)';
+              seriesComplete = true;
+              notes.push('Will need Tdap at age 11-12 years');
+            } else {
+              // Need 5th dose at 4-6 years
+              const fifthDoseDate = this.addDays(birthDate, 4 * 365);
+              const minFromFourth = this.addDays(sortedDoses[3].date, 183); // 6 months
+              const finalDate = new Date(Math.max(fifthDoseDate.getTime(), minFromFourth.getTime()));
+              
+              if (currentDate >= finalDate) {
+                recommendation = 'Give DTaP dose 5 now (school entry dose)';
+              } else {
+                recommendation = `Give DTaP dose 5 on or after ${this.formatDate(finalDate)}`;
+                nextDoseDate = this.formatDate(finalDate);
+              }
+              notes.push('5th dose at 4-6 years for school entry');
+            }
+          } else if (numDoses === 0) {
+            if (currentAgeMonths >= 1.5) { // 6 weeks
+              recommendation = 'Give DTaP dose 1 now';
+              notes.push('Schedule: 2, 4, 6, 15-18 months, 4-6 years');
+            } else {
+              const nextDate = this.addDays(birthDate, 42); // 6 weeks
+              recommendation = `Give DTaP dose 1 on or after ${this.formatDate(nextDate)}`;
+              nextDoseDate = this.formatDate(nextDate);
+            }
           } else {
-            recommendation = `Give DTaP dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
-            nextDoseDate = this.formatDate(nextDate);
-          }
-          
-          if (numDoses < 3) {
-            notes.push('Primary series: minimum 4 weeks between doses 1-3');
-            notes.push(`After dose ${numDoses + 1}: wait ${numDoses === 2 ? '6 months for dose 4' : '4 weeks for next dose'}`);
+            // CDC minimum intervals for ages 4 months-6 years
+            const minIntervals = [28, 28, 183, 183]; // 4 weeks, 4 weeks, 6 months, 6 months
+            const nextInterval = minIntervals[numDoses - 1] || 28;
+            const nextDate = this.addDays(sortedDoses[numDoses - 1].date, nextInterval);
+            
+            if (currentDate >= nextDate) {
+              recommendation = `Give DTaP dose ${numDoses + 1} now`;
+            } else {
+              recommendation = `Give DTaP dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
+              nextDoseDate = this.formatDate(nextDate);
+            }
+            
+            // Add specific interval guidance per CDC
+            if (numDoses === 1) {
+              notes.push('Dose 2: Minimum 4 weeks after dose 1');
+            } else if (numDoses === 2) {
+              notes.push('Dose 3: Minimum 4 weeks after dose 2');
+            } else if (numDoses === 3) {
+              notes.push('Dose 4: Minimum 6 months after dose 3');
+            } else if (numDoses === 4) {
+              notes.push('Dose 5: Minimum 6 months after dose 4');
+            }
           }
         }
         break;
 
-      case 'tdap':
-        if (currentAgeYears < 7) {
-          recommendation = 'Use DTaP instead - child under 7 years';
-          notes.push('Tdap is for ages 7 years and older');
-        } else if (numDoses >= 1 && currentAgeYears < 65) {
-          recommendation = 'Tdap series complete';
-          seriesComplete = true;
-          notes.push('Give Td booster every 10 years, or Tdap if pregnant');
-        } else if (numDoses === 0) {
-          recommendation = 'Give Tdap now (one-time dose)';
-          notes.push('Tdap replaces one Td booster; then Td every 10 years');
-        } else if (currentAgeYears >= 65) {
-          const lastDose = sortedDoses[sortedDoses.length - 1];
-          const yearsSinceLastDose = this.getAgeInDays(lastDose.date, currentDate) / 365.25;
-          
-          if (yearsSinceLastDose >= 10) {
-            recommendation = 'Give Td or Tdap booster now';
-          } else {
-            const nextDate = this.addDays(lastDose.date, 10 * 365);
-            recommendation = `Next Td/Tdap booster due ${this.formatDate(nextDate)}`;
-            nextDoseDate = this.formatDate(nextDate);
-          }
-          notes.push('Booster every 10 years for adults');
-        }
-        break;
+
 
       case 'hib':
         if (currentAgeYears >= 5) {
@@ -780,8 +807,40 @@ export class VaccineCatchUpService {
         notes.push('Vaccine not in standard catch-up schedule or name not recognized');
     }
 
+    // Display user-friendly vaccine names
+    let displayName = normalizedName;
+    if (normalizedName === 'dtap_tdap') {
+      displayName = currentAgeYears >= 7 ? 'Tdap' : 'DTaP';
+    } else if (normalizedName === 'hepatitis_b') {
+      displayName = 'Hepatitis B';
+    } else if (normalizedName === 'hepatitis_a') {
+      displayName = 'Hepatitis A';
+    } else if (normalizedName === 'hib') {
+      displayName = 'HIB';
+    } else if (normalizedName === 'pneumococcal') {
+      displayName = 'Pneumococcal (PCV)';
+    } else if (normalizedName === 'polio') {
+      displayName = 'Polio (IPV)';
+    } else if (normalizedName === 'influenza') {
+      displayName = 'Influenza';
+    } else if (normalizedName === 'mmr') {
+      displayName = 'MMR';
+    } else if (normalizedName === 'varicella') {
+      displayName = 'Varicella';
+    } else if (normalizedName === 'hpv') {
+      displayName = 'HPV';
+    } else if (normalizedName === 'meningococcal_acwy') {
+      displayName = 'MenACWY';
+    } else if (normalizedName === 'meningococcal_b') {
+      displayName = 'MenB';
+    } else if (normalizedName === 'covid19') {
+      displayName = 'COVID-19';
+    } else if (normalizedName === 'rotavirus') {
+      displayName = 'Rotavirus';
+    }
+
     return {
-      vaccineName: normalizedName,
+      vaccineName: displayName,
       recommendation,
       nextDoseDate,
       seriesComplete,
@@ -799,7 +858,7 @@ export class VaccineCatchUpService {
     // Standard vaccine list for catch-up schedules
     const standardVaccines = [
       'HepB', 'Rotavirus', 'DTaP', 'Hib', 'PCV', 'IPV', 'COVID-19', 'Influenza', 
-      'MMR', 'VAR', 'HepA', 'Tdap', 'HPV', 'MenACWY', 'MenB'
+      'MMR', 'VAR', 'HepA', 'HPV', 'MenACWY', 'MenB'
     ];
 
     // Process each vaccine in the history
