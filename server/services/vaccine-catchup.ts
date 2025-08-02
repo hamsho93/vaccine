@@ -70,11 +70,34 @@ export class VaccineCatchUpService {
     birthDate: Date,
     currentDate: Date,
     doses: VaccineDoseInfo[],
-    specialConditions?: SpecialConditions
+    specialConditions?: SpecialConditions,
+    immunityEvidence?: Record<string, boolean>
   ): VaccineRecommendation {
     const normalizedName = this.normalizeVaccineName(vaccineName);
     const sortedDoses = doses.sort((a, b) => a.date.getTime() - b.date.getTime());
-    const numDoses = sortedDoses.length;
+    
+    // Validate doses for early administration
+    const validDoses: VaccineDoseInfo[] = [];
+    const earlyDoses: number[] = [];
+    
+    sortedDoses.forEach((dose, index) => {
+      const previousDose = index > 0 ? validDoses[validDoses.length - 1] : null;
+      const isEarly = isDoseTooEarly(
+        normalizedName,
+        index + 1,
+        birthDate,
+        dose.date,
+        previousDose?.date || null
+      );
+      
+      if (isEarly) {
+        earlyDoses.push(index + 1);
+      } else {
+        validDoses.push(dose);
+      }
+    });
+    
+    const numDoses = validDoses.length;
     const currentAgeDays = this.getAgeInDays(birthDate, currentDate);
     const currentAgeMonths = this.getAgeInMonths(birthDate, currentDate);
     const currentAgeYears = this.getAgeInYears(birthDate, currentDate);
@@ -87,6 +110,30 @@ export class VaccineCatchUpService {
     const contraindications: string[] = [];
     const precautions: string[] = [];
     const specialSituations: string[] = [];
+    
+    // Add notes about early doses
+    if (earlyDoses.length > 0) {
+      notes.push(`⚠️ Dose(s) ${earlyDoses.join(', ')} given too early per CDC guidelines - not counted`);
+    }
+    
+    // Check for evidence of immunity
+    if (immunityEvidence?.[normalizedName]) {
+      seriesComplete = true;
+      recommendation = 'Series complete due to evidence of immunity';
+      notes.push('Immunity confirmed (e.g., lab results or disease history); no further doses needed per CDC');
+      
+      return {
+        vaccineName: vaccineNameMapper.getAgeSpecificDisplay(normalizedName, currentAgeYears),
+        recommendation,
+        nextDoseDate,
+        seriesComplete,
+        notes,
+        decisionType: 'not-recommended',
+        contraindications,
+        precautions,
+        specialSituations
+      };
+    }
 
     switch (normalizedName) {
       case 'hepatitis_b':
@@ -300,92 +347,144 @@ export class VaccineCatchUpService {
 
 
       case 'hib':
+        // Enhanced Hib logic using catch-up rules
+        const hibRules = getVaccineRules(normalizedName);
+        
         if (currentAgeYears >= 5) {
           recommendation = 'HIB vaccine not routinely recommended after 5 years';
           seriesComplete = true;
           notes.push('HIB vaccine generally not needed for healthy children 5 years and older');
-        } else if (numDoses >= 4) {
-          recommendation = 'HIB series complete';
-          seriesComplete = true;
-        } else if (currentAgeMonths >= 15 && numDoses >= 1) {
-          recommendation = 'HIB series may be complete (depends on vaccine brand and timing)';
-          seriesComplete = true;
-          notes.push('Children who received at least 1 dose after 15 months may not need additional doses');
-        } else if (numDoses === 0) {
-          if (currentAgeMonths >= 1.5) { // 6 weeks
-            recommendation = 'Give HIB dose 1 now';
-          } else {
-            const nextDate = this.addDays(birthDate, 42); // 6 weeks
-            recommendation = `Give HIB dose 1 on or after ${this.formatDate(nextDate)}`;
-            nextDoseDate = this.formatDate(nextDate);
+          
+          // Check special conditions
+          if (specialConditions?.immunocompromised || specialConditions?.asplenia) {
+            recommendation = 'Consider HIB vaccine for high-risk condition';
+            seriesComplete = false;
+            notes.push('May give 1 dose to older children/adults with asplenia or immunocompromised if unvaccinated');
           }
-          notes.push('Minimum age: 6 weeks');
         } else {
-          const firstDoseAgeMonths = this.getAgeInMonths(birthDate, sortedDoses[0].date);
-          let interval = 28; // 4 weeks default
+          // Determine age at first dose or current age if no doses
+          const ageAtFirst = numDoses > 0 ? this.getAgeInMonths(birthDate, validDoses[0].date) : currentAgeMonths;
           
-          // Adjust interval based on age at first dose
-          if (firstDoseAgeMonths >= 12) {
-            interval = 56; // 8 weeks if first dose at 12+ months
-          }
+          // Select appropriate catch-up rule based on age at first dose
+          let ageKey: string;
+          if (ageAtFirst < 7) ageKey = '<7m';
+          else if (ageAtFirst < 12) ageKey = '7-11m';
+          else if (ageAtFirst < 15) ageKey = '12-14m';
+          else if (ageAtFirst < 60) ageKey = '15-59m';
+          else ageKey = '15-59m'; // Default to single dose for older
           
-          const nextDate = this.addDays(sortedDoses[numDoses - 1].date, interval);
-          if (currentDate >= nextDate) {
-            recommendation = `Give HIB dose ${numDoses + 1} now`;
+          const catchUp = hibRules?.catchUpRules?.[ageKey] || { doses: 1, intervals: [] };
+          const requiredDoses = catchUp.doses;
+          
+          if (numDoses >= requiredDoses) {
+            recommendation = 'HIB series complete';
+            seriesComplete = true;
+            if (catchUp.notes?.length) {
+              notes.push(...catchUp.notes);
+            }
+          } else if (numDoses === 0) {
+            if (currentAgeMonths >= 1.5) { // 6 weeks
+              recommendation = 'Give HIB dose 1 now';
+              if (catchUp.notes?.length) {
+                notes.push(...catchUp.notes);
+              }
+            } else {
+              const nextDate = this.addDays(birthDate, 42); // 6 weeks
+              recommendation = `Give HIB dose 1 on or after ${this.formatDate(nextDate)}`;
+              nextDoseDate = this.formatDate(nextDate);
+              notes.push('Minimum age: 6 weeks');
+            }
           } else {
-            recommendation = `Give HIB dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
-            nextDoseDate = this.formatDate(nextDate);
-          }
-          
-          notes.push('Schedule varies by vaccine brand (ActHIB/Hiberix vs PedvaxHIB)');
-          if (numDoses === 3 && currentAgeMonths >= 12) {
-            notes.push('Final booster dose at 12-15 months');
+            // Calculate next dose using catch-up intervals
+            const nextInterval = catchUp.intervals[numDoses - 1] || 28;
+            const nextDate = this.addDays(validDoses[numDoses - 1].date, nextInterval);
+            
+            if (currentDate >= nextDate) {
+              recommendation = `Give HIB dose ${numDoses + 1} now`;
+            } else {
+              recommendation = `Give HIB dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
+              nextDoseDate = this.formatDate(nextDate);
+            }
+            
+            if (catchUp.notes?.length) {
+              notes.push(...catchUp.notes);
+            }
+            notes.push(`Minimum interval: ${nextInterval} days`);
           }
         }
         break;
 
       case 'pneumococcal':
-        if (currentAgeYears >= 5 && numDoses >= 1) {
-          recommendation = 'Pneumococcal series complete (healthy children)';
-          seriesComplete = true;
-          notes.push('Additional doses may be needed for high-risk conditions');
-        } else if (numDoses >= 4) {
-          recommendation = 'Pneumococcal (PCV) series complete';
-          seriesComplete = true;
-        } else if (currentAgeMonths >= 24 && numDoses >= 1) {
-          recommendation = 'Pneumococcal series may be complete (depends on timing)';
-          seriesComplete = true;
-          notes.push('Children who received doses after 24 months may not need additional PCV doses');
-        } else if (numDoses === 0) {
-          if (currentAgeMonths >= 1.5) { // 6 weeks
-            recommendation = 'Give pneumococcal (PCV) dose 1 now';
-            notes.push('Schedule: Doses at 2, 4, 6, and 12-15 months (4-dose series)');
+        // Enhanced PCV logic using catch-up rules
+        const pcvRules = getVaccineRules(normalizedName);
+        
+        if (currentAgeYears >= 5) {
+          if (numDoses >= 1) {
+            recommendation = 'Pneumococcal series complete (healthy children)';
+            seriesComplete = true;
+            notes.push('Additional doses may be needed for high-risk conditions');
+            
+            // Check special conditions
+            if (specialConditions?.immunocompromised || specialConditions?.asplenia || 
+                specialConditions?.cochlearImplant || specialConditions?.csfLeak) {
+              recommendation = 'Consider additional pneumococcal vaccines for high-risk condition';
+              seriesComplete = false;
+              notes.push('High-risk individuals may need PCV and PPSV23 vaccines');
+            }
           } else {
-            const nextDate = this.addDays(birthDate, 42); // 6 weeks
-            recommendation = `Give pneumococcal (PCV) dose 1 on or after ${this.formatDate(nextDate)}`;
-            nextDoseDate = this.formatDate(nextDate);
-            notes.push('Minimum age: 6 weeks');
+            recommendation = 'PCV not routinely recommended after 5 years';
+            notes.push('May be indicated for high-risk conditions');
           }
-          notes.push('Use PCV15 or PCV20; routine schedule at 2, 4, 6, 12-15 months');
         } else {
-          let interval = 28; // 4 weeks for doses 1-3 under 12 months
+          // Determine age at first dose or current age if no doses
+          const ageAtFirst = numDoses > 0 ? this.getAgeInMonths(birthDate, validDoses[0].date) : currentAgeMonths;
           
-          if (numDoses >= 3 || currentAgeMonths >= 12) {
-            interval = 56; // 8 weeks for booster or if over 12 months
-          }
+          // Select appropriate catch-up rule based on age at first dose
+          let ageKey: string;
+          if (ageAtFirst < 7) ageKey = '<7m';
+          else if (ageAtFirst < 12) ageKey = '7-11m';
+          else if (ageAtFirst < 24) ageKey = '12-23m';
+          else if (ageAtFirst < 60) ageKey = '24-59m';
+          else ageKey = '24-59m'; // Default to single dose for older
           
-          const nextDate = this.addDays(sortedDoses[numDoses - 1].date, interval);
-          if (currentDate >= nextDate) {
-            recommendation = `Give pneumococcal (PCV) dose ${numDoses + 1} now`;
+          const catchUp = pcvRules?.catchUpRules?.[ageKey] || { doses: 1, intervals: [] };
+          const requiredDoses = catchUp.doses;
+          
+          if (numDoses >= requiredDoses) {
+            recommendation = 'Pneumococcal (PCV) series complete';
+            seriesComplete = true;
+            if (catchUp.notes?.length) {
+              notes.push(...catchUp.notes);
+            }
+          } else if (numDoses === 0) {
+            if (currentAgeMonths >= 1.5) { // 6 weeks
+              recommendation = 'Give pneumococcal (PCV) dose 1 now';
+              notes.push('Use PCV15 or PCV20');
+              if (catchUp.notes?.length) {
+                notes.push(...catchUp.notes);
+              }
+            } else {
+              const nextDate = this.addDays(birthDate, 42); // 6 weeks
+              recommendation = `Give pneumococcal (PCV) dose 1 on or after ${this.formatDate(nextDate)}`;
+              nextDoseDate = this.formatDate(nextDate);
+              notes.push('Minimum age: 6 weeks');
+            }
           } else {
-            recommendation = `Give pneumococcal (PCV) dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
-            nextDoseDate = this.formatDate(nextDate);
-          }
-          
-          if (numDoses < 3) {
-            notes.push('Primary series: minimum 4 weeks between doses if <12 months old');
-          } else if (numDoses === 3 && currentAgeMonths >= 12) {
-            notes.push('Final booster: minimum 8 weeks after dose 3, given at 12-15 months');
+            // Calculate next dose using catch-up intervals
+            const nextInterval = catchUp.intervals[numDoses - 1] || 28;
+            const nextDate = this.addDays(validDoses[numDoses - 1].date, nextInterval);
+            
+            if (currentDate >= nextDate) {
+              recommendation = `Give pneumococcal (PCV) dose ${numDoses + 1} now`;
+            } else {
+              recommendation = `Give pneumococcal (PCV) dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
+              nextDoseDate = this.formatDate(nextDate);
+            }
+            
+            if (catchUp.notes?.length) {
+              notes.push(...catchUp.notes);
+            }
+            notes.push(`Minimum interval: ${nextInterval} days`);
           }
         }
         break;
@@ -694,30 +793,68 @@ export class VaccineCatchUpService {
         break;
 
       case 'meningococcal_b':
+        // Enhanced MenB logic with product variants
+        const menBRules = getVaccineRules(normalizedName);
+        const menBProduct = doses.length > 0 && doses[0].product ? doses[0].product : 'Unknown';
+        const menBVariant = menBRules?.productVariants?.[menBProduct] || menBRules?.productVariants?.['Unknown'];
+        
+        // Standard doses based on product and risk status
+        let menBDosesRequired = menBVariant?.doses || 2;
+        const menBIntervals = menBVariant?.minimumIntervals || [183]; // Default 6 months
+        
+        // Adjust for high-risk conditions with Trumenba
+        if (menBProduct === 'Trumenba' && (specialConditions?.asplenia || specialConditions?.immunocompromised)) {
+          menBDosesRequired = 3; // 3-dose series for high-risk
+          notes.push('High-risk: Using 3-dose Trumenba schedule (0, 1-2 months, 6 months)');
+        }
+        
         if (currentAgeYears >= 16 && currentAgeYears <= 23) {
-          if (numDoses >= 2) {
+          if (numDoses >= menBDosesRequired) {
             recommendation = 'MenB series complete';
             seriesComplete = true;
           } else if (numDoses === 0) {
             recommendation = 'Give MenB dose 1 now (preferred at 16-18 years)';
             notes.push('Category B recommendation: individual clinical decision');
-          } else if (numDoses === 1) {
-            const nextDate = this.addDays(sortedDoses[0].date, 183); // 6 months
+            if (menBVariant?.notes) {
+              notes.push(...menBVariant.notes);
+            }
+          } else {
+            // Calculate next dose based on product-specific intervals
+            const intervalIndex = Math.min(numDoses - 1, menBIntervals.length - 1);
+            const nextInterval = menBIntervals[intervalIndex] || 183;
+            const lastDoseDate = sortedDoses[numDoses - 1].date;
+            const nextDate = this.addDays(lastDoseDate, nextInterval);
+            
             if (currentDate >= nextDate) {
-              recommendation = 'Give MenB dose 2 now';
+              recommendation = `Give MenB dose ${numDoses + 1} now`;
             } else {
-              recommendation = `Give MenB dose 2 on or after ${this.formatDate(nextDate)}`;
+              recommendation = `Give MenB dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
               nextDoseDate = this.formatDate(nextDate);
             }
-            notes.push('Minimum 6 months between doses');
+            
+            // Add interval notes
+            if (menBProduct === 'Bexsero') {
+              notes.push('Minimum 1 month between doses');
+            } else if (menBProduct === 'Trumenba') {
+              if (menBDosesRequired === 3) {
+                notes.push(numDoses === 1 ? 'Next dose: 1-2 months after dose 1' : 'Final dose: 6 months after dose 1');
+              } else {
+                notes.push('Minimum 6 months between doses');
+              }
+            }
           }
         } else if (currentAgeYears >= 10) {
-          recommendation = 'MenB available for high-risk individuals';
-          // Only show routine guidance if patient is close to routine age
-          if (currentAgeYears <= 18) {
-            notes.push('Routine vaccination preferred at 16-18 years');
+          if (specialConditions?.asplenia || specialConditions?.immunocompromised) {
+            recommendation = 'Recommended: Give MenB dose 1 for high-risk condition';
+            decisionType = 'risk-based';
+            notes.push('High-risk individuals should receive MenB vaccine');
           } else {
-            notes.push('MenB vaccination generally not recommended after age 23');
+            recommendation = 'MenB available for high-risk individuals';
+            if (currentAgeYears <= 18) {
+              notes.push('Routine vaccination preferred at 16-18 years');
+            } else {
+              notes.push('MenB vaccination generally not recommended after age 23');
+            }
           }
           notes.push('May be given to high-risk individuals ≥10 years');
         } else {
@@ -727,40 +864,77 @@ export class VaccineCatchUpService {
         break;
 
       case 'covid19':
-        // COVID-19 vaccine recommendations based on age and special conditions
+        // Enhanced COVID-19 logic with product variants and shared clinical decision-making
+        const covidRules = getVaccineRules(normalizedName);
+        const covidProduct = doses.length > 0 && doses[0].product ? doses[0].product : 'Unknown';
+        const covidVariant = covidRules?.productVariants?.[covidProduct] || covidRules?.productVariants?.['Unknown'];
+        
+        // Calculate doses required based on age and product
+        let covidDosesRequired = covidVariant?.doses || 1;
+        let covidIntervals = covidVariant?.minimumIntervals || [28];
+        
+        // Age-based adjustments
+        if (currentAgeYears >= 5) {
+          covidDosesRequired = 1; // ≥5 years: 1 dose per CDC
+        }
+        
+        // Special conditions adjustments
+        if (specialConditions?.immunocompromised) {
+          covidDosesRequired = Math.max(covidDosesRequired, 3); // At least 3 for immunocompromised
+          notes.push('Immunocompromised patients: 3-dose primary series + additional doses');
+          decisionType = 'risk-based';
+        }
+        
+        // Age-based decision type
         if (currentAgeMonths < 6) {
           recommendation = 'COVID-19 vaccine not recommended under 6 months';
-          seriesComplete = false;
           notes.push('Minimum age: 6 months');
           decisionType = 'not-recommended';
-        } else if (currentAgeYears < 18) {
-          // Shared clinical decision-making for 6 months-17 years
+        } else if (currentAgeYears < 18 && !specialConditions?.immunocompromised) {
+          // Shared clinical decision-making for ages 6 months-17 years (unless immunocompromised)
           decisionType = 'shared-clinical-decision';
-          if (numDoses === 0) {
-            if (specialConditions?.immunocompromised) {
-              recommendation = 'Recommended: Give COVID-19 vaccine dose 1 (3-dose primary series for immunocompromised)';
-              notes.push('Immunocompromised patients: 3-dose primary series recommended');
-              notes.push('Additional doses may be needed based on current CDC guidance');
-              decisionType = 'risk-based';
-            } else {
+        } else if (currentAgeYears >= 18) {
+          decisionType = 'routine';
+        }
+        
+        // Calculate recommendation based on doses received
+        if (currentAgeMonths >= 6) {
+          if (numDoses >= covidDosesRequired) {
+            seriesComplete = true;
+            recommendation = 'COVID-19 series complete per current guidelines';
+            notes.push('Continue to follow CDC guidance for updated vaccines');
+          } else if (numDoses === 0) {
+            if (decisionType === 'shared-clinical-decision') {
               recommendation = 'COVID-19 vaccine available through shared clinical decision-making';
               notes.push('Discuss benefits and risks with healthcare provider');
-              notes.push('Vaccination decision should be based on individual circumstances');
+            } else {
+              recommendation = 'Give COVID-19 vaccine dose 1 now';
+              nextDoseDate = this.formatDate(currentDate);
             }
           } else {
-            recommendation = 'Continue COVID-19 vaccination per current CDC guidance';
-            notes.push('Follow age-appropriate schedule for additional doses');
+            // Calculate next dose date based on product intervals
+            const intervalIndex = Math.min(numDoses - 1, covidIntervals.length - 1);
+            const nextInterval = covidIntervals[intervalIndex] || 28;
+            const lastDoseDate = sortedDoses[numDoses - 1]?.date || currentDate;
+            const nextDate = this.addDays(lastDoseDate, nextInterval);
+            
+            if (currentDate >= nextDate) {
+              recommendation = `Give COVID-19 dose ${numDoses + 1} now`;
+              nextDoseDate = this.formatDate(currentDate);
+            } else {
+              recommendation = `Give COVID-19 dose ${numDoses + 1} on or after ${this.formatDate(nextDate)}`;
+              nextDoseDate = this.formatDate(nextDate);
+            }
           }
-        } else {
-          // Routine for 18 years
-          decisionType = 'routine';
-          if (numDoses === 0) {
-            recommendation = 'Give COVID-19 vaccine dose 1 now';
-            nextDoseDate = this.formatDate(currentDate);
-          } else {
-            recommendation = 'COVID-19 vaccination up to date per current guidelines';
-            seriesComplete = true;
-            notes.push('Continue to follow CDC guidance for boosters');
+          
+          // Add product-specific notes
+          if (covidVariant?.notes && numDoses < covidDosesRequired) {
+            notes.push(...covidVariant.notes);
+          }
+          
+          // Add shared decision notes if applicable
+          if (decisionType === 'shared-clinical-decision' && numDoses === 0) {
+            notes.push('Vaccination decision should be based on individual circumstances');
           }
         }
         break;
@@ -859,6 +1033,23 @@ export class VaccineCatchUpService {
       contraindications.push(...checkContraindications(normalizedName));
       precautions.push(...checkPrecautions(normalizedName));
       
+      // Block vaccine if contraindications present
+      if (contraindications.length > 0 && !seriesComplete) {
+        recommendation = 'Do not give - contraindication present';
+        decisionType = 'not-recommended';
+        notes.unshift('⚠️ This vaccine is contraindicated for this patient');
+        
+        // Check if it's a specific contraindication like pregnancy
+        if (normalizedName === 'mmr' || normalizedName === 'varicella') {
+          if (specialConditions?.pregnancy) {
+            notes.push('Live vaccines contraindicated during pregnancy');
+          }
+          if (specialConditions?.immunocompromised) {
+            notes.push('Live vaccines contraindicated for immunocompromised patients');
+          }
+        }
+      }
+      
       // Get special situation modifications
       if (specialConditions) {
         const modifications = getSpecialSituationModifications(normalizedName, specialConditions);
@@ -907,7 +1098,8 @@ export class VaccineCatchUpService {
     
     for (const vaccineHistory of request.vaccineHistory) {
       const doses = vaccineHistory.doses.map(dose => ({
-        date: this.parseDate(dose.date)
+        date: this.parseDate(dose.date),
+        product: dose.product
       }));
       
       const recommendation = this.getVaccineRecommendation(
@@ -915,7 +1107,8 @@ export class VaccineCatchUpService {
         birthDate,
         currentDate,
         doses,
-        specialConditions
+        specialConditions,
+        request.immunityEvidence
       );
       
       recommendations.push(recommendation);
@@ -931,7 +1124,8 @@ export class VaccineCatchUpService {
           birthDate,
           currentDate,
           [],
-          specialConditions
+          specialConditions,
+          request.immunityEvidence
         );
         recommendations.push(recommendation);
       }

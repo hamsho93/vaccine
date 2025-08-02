@@ -53,6 +53,7 @@ export const CatchUpRequest = z.object({
     vaccineName: z.string(),
     doses: z.array(z.object({
       date: z.string(), // ISO date string
+      product: z.string().optional(), // Optional product name
     })),
   })),
   specialConditions: z.object({
@@ -68,6 +69,7 @@ export const CatchUpRequest = z.object({
     chronicLiverDisease: z.boolean().optional(),
     chronicKidneyDisease: z.boolean().optional(),
   }).optional(),
+  immunityEvidence: z.record(z.string(), z.boolean()).optional(), // vaccine name -> has immunity
 });
 
 export const CatchUpResult = z.object({

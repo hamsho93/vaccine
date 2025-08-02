@@ -148,7 +148,7 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
   },
   
   'tdap': {
-    minimumAge: 4015, // 11 years
+    minimumAge: 2555, // 7 years for catch-up
     dosesRequired: 1,
     minimumIntervals: [],
     contraindications: [
@@ -167,8 +167,9 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
       }
     ],
     notes: [
-      "If DTaP series incomplete, use Tdap for catch-up",
-      "Tdap can be given regardless of interval since last tetanus or diphtheria-toxoid containing vaccine"
+      "If DTaP series incomplete, use Tdap for catch-up starting at age 7",
+      "Tdap can be given regardless of interval since last tetanus or diphtheria-toxoid containing vaccine",
+      "Boosters: Td or Tdap every 10 years after initial Tdap"
     ]
   },
   
@@ -182,6 +183,28 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
     },
     minimumIntervals: [28, 28, 56], // 4 weeks, 4 weeks, 8 weeks
     maximumAge: 1825, // 5 years (only for high-risk)
+    catchUpRules: {
+      '<7m': { 
+        doses: 4, 
+        intervals: [28, 28, 56], 
+        notes: ['3 primary doses + booster at 12-15 months'] 
+      },
+      '7-11m': { 
+        doses: 3, 
+        intervals: [28, 56], 
+        notes: ['2 primary doses + booster'] 
+      },
+      '12-14m': { 
+        doses: 2, 
+        intervals: [56], 
+        notes: ['1 dose + booster ≥8 weeks later'] 
+      },
+      '15-59m': { 
+        doses: 1, 
+        intervals: [], 
+        notes: ['Single dose if unvaccinated'] 
+      }
+    },
     contraindications: [
       "Severe allergic reaction to previous dose",
       "Age less than 6 weeks"
@@ -214,6 +237,28 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
       return 0; // ≥5 years: only for risk conditions
     },
     minimumIntervals: [28, 28, 56], // 4 weeks, 4 weeks, 8 weeks
+    catchUpRules: {
+      '<7m': { 
+        doses: 4, 
+        intervals: [28, 28, 56], 
+        notes: ['3 primary doses + booster at 12-15 months'] 
+      },
+      '7-11m': { 
+        doses: 3, 
+        intervals: [28, 56], 
+        notes: ['2 primary doses + booster'] 
+      },
+      '12-23m': { 
+        doses: 2, 
+        intervals: [56], 
+        notes: ['2 doses ≥8 weeks apart'] 
+      },
+      '24-59m': { 
+        doses: 1, 
+        intervals: [], 
+        notes: ['Single dose if healthy, 2 doses if risk conditions'] 
+      }
+    },
     contraindications: [
       "Severe allergic reaction to previous dose"
     ],
@@ -416,6 +461,23 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
     dosesRequired: 2, // Shared clinical decision-making
     minimumIntervals: [28], // 4 weeks (product dependent)
     maximumAge: 8395, // 23 years preferred
+    productVariants: {
+      'Bexsero': { 
+        doses: 2, 
+        minimumIntervals: [28], 
+        notes: ['2 doses ≥1 month apart'] 
+      },
+      'Trumenba': { 
+        doses: 2, 
+        minimumIntervals: [183], 
+        notes: ['2 doses ≥6 months apart', '3 doses for high-risk (0,1-2m,6m)'] 
+      },
+      'Unknown': { 
+        doses: 2, 
+        minimumIntervals: [183], 
+        notes: ['Default to 6-month interval'] 
+      }
+    },
     contraindications: [
       "Severe allergic reaction to previous dose"
     ],
