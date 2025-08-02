@@ -45,12 +45,6 @@ export interface CDCVaccineRules {
 // Grace period: doses given ≤4 days early are valid
 const GRACE_PERIOD_DAYS = 4;
 
-// Helper to check if dose was given too early
-export function isDoseTooEarly(doseDate: Date, minimumDate: Date): boolean {
-  const daysDiff = Math.floor((minimumDate.getTime() - doseDate.getTime()) / (1000 * 60 * 60 * 24));
-  return daysDiff > GRACE_PERIOD_DAYS;
-}
-
 // Helper to calculate calendar months
 export function addCalendarMonths(date: Date, months: number): Date {
   const result = new Date(date);
@@ -541,14 +535,32 @@ export function getVaccineRules(normalizedVaccineName: string): CDCVaccineRules 
 // Check if patient has contraindications
 export function checkContraindications(
   vaccineName: string,
-  patientHistory?: string[]
+  patientHistory?: string[],
+  specialConditions?: SpecialConditions
 ): string[] {
   const rules = getVaccineRules(vaccineName);
   if (!rules) return [];
   
-  // This would be enhanced with actual patient history checking
-  // For now, return potential contraindications for awareness
-  return rules.contraindications;
+  const applicableContraindications: string[] = [];
+  
+  // Only add contraindications that actually apply to this patient
+  // For now, we only check special conditions since we don't have detailed patient history
+  if (specialConditions) {
+    // Live vaccines contraindicated for immunocompromised patients
+    if ((vaccineName === 'mmr' || vaccineName === 'varicella' || vaccineName === 'rotavirus') && 
+        specialConditions.immunocompromised) {
+      applicableContraindications.push('Severe immunodeficiency');
+    }
+    
+    // Live vaccines contraindicated during pregnancy
+    if ((vaccineName === 'mmr' || vaccineName === 'varicella') && specialConditions.pregnancy) {
+      applicableContraindications.push('Pregnancy');
+    }
+  }
+  
+  // Without detailed patient history, we generally don't apply contraindications
+  // unless there are specific conditions that warrant them
+  return applicableContraindications;
 }
 
 // Check if patient has precautions

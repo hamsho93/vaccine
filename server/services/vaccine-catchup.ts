@@ -2,7 +2,6 @@ import { CatchUpRequest, CatchUpResult, VaccineRecommendation } from "@shared/sc
 import { vaccineNameMapper } from "./vaccine-name-mapper";
 import { 
   getVaccineRules, 
-  isDoseTooEarly, 
   addCalendarMonths,
   checkContraindications,
   checkPrecautions,
@@ -65,6 +64,39 @@ export class VaccineCatchUpService {
     return Math.floor(ageInDays / 365.25); // Account for leap years
   }
 
+  // Check if dose was given too early according to CDC guidelines
+  private isDoseTooEarly(
+    vaccineName: string,
+    doseNumber: number,
+    birthDate: Date,
+    doseDate: Date,
+    previousDoseDate: Date | null
+  ): boolean {
+    const rules = getVaccineRules(vaccineName);
+    if (!rules) return false;
+
+    const GRACE_PERIOD_DAYS = 4;
+
+    // Check minimum age for first dose
+    if (doseNumber === 1) {
+      const ageAtDose = this.getAgeInDays(birthDate, doseDate);
+      const daysDiff = rules.minimumAge - ageAtDose;
+      return daysDiff > GRACE_PERIOD_DAYS;
+    }
+
+    // Check minimum interval from previous dose
+    if (previousDoseDate && doseNumber > 1) {
+      const daysBetween = this.getAgeInDays(previousDoseDate, doseDate);
+      const requiredInterval = Array.isArray(rules.minimumIntervals) 
+        ? rules.minimumIntervals[doseNumber - 2] || 28
+        : 28;
+      const daysDiff = requiredInterval - daysBetween;
+      return daysDiff > GRACE_PERIOD_DAYS;
+    }
+
+    return false;
+  }
+
   private getVaccineRecommendation(
     vaccineName: string,
     birthDate: Date,
@@ -82,7 +114,7 @@ export class VaccineCatchUpService {
     
     sortedDoses.forEach((dose, index) => {
       const previousDose = index > 0 ? validDoses[validDoses.length - 1] : null;
-      const isEarly = isDoseTooEarly(
+      const isEarly = this.isDoseTooEarly(
         normalizedName,
         index + 1,
         birthDate,
@@ -1029,9 +1061,12 @@ export class VaccineCatchUpService {
     // Get CDC rules for enhanced recommendations
     const cdcRules = getVaccineRules(normalizedName);
     if (cdcRules) {
-      // Check for contraindications and precautions
-      contraindications.push(...checkContraindications(normalizedName));
-      precautions.push(...checkPrecautions(normalizedName));
+      // Check for contraindications and precautions only if they actually apply
+      const foundContraindications = checkContraindications(normalizedName, undefined, specialConditions);
+      contraindications.push(...foundContraindications);
+      
+      // Don't add general precautions unless specifically relevant
+      // precautions.push(...checkPrecautions(normalizedName));
       
       // Block vaccine if contraindications present
       if (contraindications.length > 0 && !seriesComplete) {
