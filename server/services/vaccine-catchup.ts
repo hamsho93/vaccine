@@ -1131,28 +1131,58 @@ export class VaccineCatchUpService {
     // Process each vaccine in the history
     const processedVaccines = new Set<string>();
     
+    // First, combine vaccine histories that should be treated as the same series
+    const combinedHistories = new Map<string, any>();
+    
     for (const vaccineHistory of request.vaccineHistory) {
+      const normalizedName = this.normalizeVaccineName(vaccineHistory.vaccineName);
+      
+      if (!combinedHistories.has(normalizedName)) {
+        // Use age-appropriate vaccine name for DTaP/Tdap
+        let appropriateVaccineName = vaccineHistory.vaccineName;
+        if (normalizedName === 'dtap_tdap') {
+          const ageInYears = this.getAgeInYears(birthDate, currentDate);
+          appropriateVaccineName = ageInYears >= 7 ? 'Tdap' : 'DTaP';
+        }
+        
+        combinedHistories.set(normalizedName, {
+          vaccineName: appropriateVaccineName,
+          doses: []
+        });
+      }
+      
+      // Add doses to the combined history
       const doses = vaccineHistory.doses.map(dose => ({
         date: this.parseDate(dose.date),
         product: dose.product
       }));
       
+      combinedHistories.get(normalizedName).doses.push(...doses);
+    }
+    
+    // Now process the combined histories
+    for (const [normalizedName, history] of Array.from(combinedHistories)) {
+      // Sort doses by date
+      history.doses.sort((a: any, b: any) => a.date.getTime() - b.date.getTime());
+      
       const recommendation = this.getVaccineRecommendation(
-        vaccineHistory.vaccineName,
+        history.vaccineName,
         birthDate,
         currentDate,
-        doses,
+        history.doses,
         specialConditions,
         request.immunityEvidence
       );
       
       recommendations.push(recommendation);
-      processedVaccines.add(this.normalizeVaccineName(vaccineHistory.vaccineName));
+      processedVaccines.add(normalizedName);
     }
 
     // Add recommendations for vaccines not in history
     for (const vaccine of standardVaccines) {
       const normalizedVaccine = this.normalizeVaccineName(vaccine);
+      
+      // Skip if already processed (including DTaP/Tdap which share the same normalized name)
       if (!processedVaccines.has(normalizedVaccine)) {
         const recommendation = this.getVaccineRecommendation(
           vaccine,
@@ -1162,7 +1192,15 @@ export class VaccineCatchUpService {
           specialConditions,
           request.immunityEvidence
         );
-        recommendations.push(recommendation);
+        
+        // Only add if not a duplicate (check by vaccine name)
+        const isDuplicate = recommendations.some(r => 
+          this.normalizeVaccineName(r.vaccineName) === normalizedVaccine
+        );
+        
+        if (!isDuplicate) {
+          recommendations.push(recommendation);
+        }
       }
     }
 
