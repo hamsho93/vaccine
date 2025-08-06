@@ -10,8 +10,9 @@ echo "🚀 Deploying Vaccine Recommendation Lambda Functions"
 # Configuration
 REGION="us-east-1"
 FUNCTION_NAME_PARSER="vaccine-parser"
-FUNCTION_NAME_CATCHUP="vaccine-catchup"
+FUNCTION_NAME_CATCHUP="vaccine-catchup" 
 ROLE_NAME="VaccineLambdaExecutionRole"
+OPENAI_API_KEY="${OPENAI_API_KEY:-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}"
 
 # Check if AWS CLI is configured
 if ! aws sts get-caller-identity &>/dev/null; then
