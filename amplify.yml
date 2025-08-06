@@ -4,12 +4,10 @@ frontend:
     preBuild:
       commands:
         - npm ci
-        - echo "Building React frontend for static hosting..."
     build:
       commands:
         - npm run build:frontend
-        - echo "Frontend build completed"
-        - ls -la dist/public/
+        - echo "Frontend build completed for Amplify hosting"
   artifacts:
     baseDirectory: dist/public
     files:
@@ -17,3 +15,9 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+backend:
+  phases:
+    build:
+      commands:
+        - npm ci
+        - echo "Backend will be deployed as Lambda functions via Amplify Gen 2"
