@@ -1,0 +1,27 @@
+version: 1
+backend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Setting Node.js version to 20..."
+        - nvm use 20 || nvm install 20
+        - node --version
+        - npm --version
+        - echo "Installing backend dependencies..."
+        - npm ci
+    build:
+      commands:
+        - echo "Deploying Amplify Gen 2 backend..."
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+    postBuild:
+      commands:
+        - echo "Backend deployment completed"
+frontend:
+  phases:
+    build:
+      commands:
+        - mkdir ./dist && echo "Backend-only app" > ./dist/index.html
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'

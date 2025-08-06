@@ -3,6 +3,7 @@ backend:
   phases:
     build:
       commands:
+        - echo "Frontend app - connecting to shared backend..."
         - npm ci --cache .npm --prefer-offline
         - npx ampx generate outputs --branch main --app-id BACKEND-APPID
 frontend:
