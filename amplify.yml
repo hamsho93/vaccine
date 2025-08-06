@@ -4,12 +4,10 @@ frontend:
     preBuild:
       commands:
         - npm ci
-        - echo "Installing dependencies for frontend build..."
+        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID
     build:
       commands:
         - npm run build:frontend
-        - echo "Frontend build completed successfully"
-        - ls -la dist/public/
   artifacts:
     baseDirectory: dist/public
     files:
@@ -17,3 +15,8 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
+backend:
+  phases:
+    build:
+      commands:
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
