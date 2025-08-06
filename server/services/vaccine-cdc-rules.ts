@@ -341,7 +341,7 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
     specialSituations: [
       {
         condition: "hivInfection",
-        modification: "May give if not severely immunocompromised (CD4 ≥15%)"
+        modification: "May give if CD4 ≥15%"
       }
     ],
     notes: [
@@ -440,7 +440,7 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
     specialSituations: [
       {
         condition: "asplenia",
-        modification: "2-dose primary series 8 weeks apart, then booster every 5 years"
+        modification: "2-dose primary + boosters every 5 years"
       },
       {
         condition: "immunocompromised",
@@ -489,41 +489,31 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
   
   'covid19': {
     minimumAge: 180, // 6 months
-    dosesRequired: 1, // Default, varies by age and product
-    minimumIntervals: [28], // 4 weeks minimum
-    productVariants: {
-      'Pfizer': {
-        doses: 3, // For 6m-4y: 3 doses; ≥5y: 1 dose
-        minimumIntervals: [21, 56], // 21 days, then 56 days for 6m-4y
-        notes: ["6 months-4 years: 3-dose series (0, 3, 8 weeks)", "≥5 years: 1 dose"]
-      },
-      'Moderna': {
-        doses: 2, // For 6m-4y: 2 doses; ≥5y: 1 dose
-        minimumIntervals: [28], // 28 days for 6m-4y
-        notes: ["6 months-4 years: 2-dose series (0, 4 weeks)", "≥5 years: 1 dose"]
-      },
-      'Unknown': {
-        doses: 1,
-        minimumIntervals: [28],
-        notes: ["Follow current CDC guidance for specific product"]
-      }
-    },
-    isAnnual: true, // Updated annually like influenza
-    contraindications: [
-      "Severe allergic reaction to previous dose",
-      "Known allergy to vaccine component"
-    ],
-    precautions: [
-      "Moderate or severe acute illness with or without fever",
-      "History of myocarditis or pericarditis"
-    ],
-    specialSituations: [
-      {
-        condition: "immunocompromised",
-        modification: "Additional doses recommended; 3-dose primary series plus additional doses"
-      }
-    ],
-    notes: [] // Age-appropriate notes are now generated dynamically in vaccine-catchup.ts
+    dosesRequired: (ageYears) => ageYears < 5 ? 3 : 1, // Default to Pfizer-like
+    minimumIntervals: (product) => product === 'Moderna' ? [28] : [21, 56],
+    contraindications: [],
+    precautions: [],
+    specialSituations: [],
+    notes: ['Dosing varies by product: Moderna 2 doses, Pfizer 3 for <5y'],
+  },
+  'dengue': {
+    minimumAge: 3285, // 9 years
+    dosesRequired: 3,
+    minimumIntervals: [183, 183], // 6 months each
+    maximumAge: 5840, // 16 years
+    contraindications: [],
+    precautions: [],
+    specialSituations: [],
+    notes: ['Recommended for children 9-16 years in dengue-endemic areas with lab evidence of prior infection'],
+  },
+  'rsv': {
+    minimumAge: 0, // Birth for nirsevimab
+    dosesRequired: 1,
+    minimumIntervals: [],
+    contraindications: [],
+    precautions: [],
+    specialSituations: [],
+    notes: ['Maternal Abrysvo during pregnancy weeks 32-36 or infant nirsevimab <8 months'],
   }
 };
 

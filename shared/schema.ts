@@ -40,7 +40,7 @@ export const VaccineRecommendation = z.object({
   nextDoseDate: z.string().optional(), // ISO date string
   seriesComplete: z.boolean(),
   notes: z.array(z.string()),
-  decisionType: z.enum(["routine", "catch-up", "shared-clinical-decision", "risk-based", "not-recommended"]).optional(),
+  decisionType: z.enum(["routine", "catch-up", "shared-clinical-decision", "risk-based", "not-recommended", "international-advisory", "aged-out"]).optional(),
   contraindications: z.array(z.string()).optional(),
   precautions: z.array(z.string()).optional(),
   specialSituations: z.array(z.string()).optional(),

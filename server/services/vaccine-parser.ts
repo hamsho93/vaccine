@@ -1,10 +1,12 @@
 import OpenAI from "openai";
+import fetch from "node-fetch";
 import { VaccineHistoryResult } from "@shared/schema";
 import { vaccineNameMapper } from "./vaccine-name-mapper";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
+  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key",
+  fetch: fetch as any
 });
 
 export class VaccineParserService {

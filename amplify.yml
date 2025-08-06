@@ -1,0 +1,26 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+        - echo "Installing dependencies and preparing build..."
+    build:
+      commands:
+        - npm run build
+        - echo "Build completed successfully"
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+backend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Backend will be served by the same Node.js process"
+    build:
+      commands:
+        - echo "Backend is bundled with frontend build"

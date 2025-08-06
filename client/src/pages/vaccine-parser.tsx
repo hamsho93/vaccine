@@ -14,12 +14,208 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { ParseVaccineHistoryRequest, VaccineHistoryResult, CatchUpRequest, CatchUpResult } from "@shared/schema";
-import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw } from "lucide-react";
+import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 
 export default function VaccineParser() {
   const [result, setResult] = useState<VaccineHistoryResult | null>(null);
   const [catchUpResult, setCatchUpResult] = useState<CatchUpResult | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Helper functions for vaccine categorization - aligned with actual system
+  const categorizeVaccines = (recommendations: any[]) => {
+    const categories = {
+      actionNeeded: [] as any[],
+      complete: [] as any[],
+      sharedDecision: [] as any[],
+      riskBased: [] as any[],
+      international: [] as any[],
+      notRecommended: [] as any[]
+    };
+
+    recommendations.forEach(rec => {
+      // Categorize primarily by decisionType, then by seriesComplete
+      switch (rec.decisionType) {
+        case 'international-advisory':
+          categories.international.push(rec);
+          break;
+        case 'shared-clinical-decision':
+          categories.sharedDecision.push(rec);
+          break;
+        case 'risk-based':
+          categories.riskBased.push(rec);
+          break;
+        case 'not-recommended':
+          categories.notRecommended.push(rec);
+          break;
+        case 'aged-out':
+          categories.notRecommended.push(rec); // Group with not-recommended
+          break;
+        default:
+          // For routine and catch-up, categorize by completion status
+          if (rec.seriesComplete) {
+            categories.complete.push(rec);
+          } else {
+            categories.actionNeeded.push(rec);
+          }
+          break;
+      }
+    });
+
+    return categories;
+  };
+
+  const getPriorityIcon = (category: string) => {
+    switch (category) {
+      case 'actionNeeded': return AlertTriangle;
+      case 'complete': return ShieldCheck;
+      case 'sharedDecision': return User;
+      case 'riskBased': return AlertCircle;
+      case 'international': return Globe;
+      case 'notRecommended': return AlertTriangle;
+      default: return Info;
+    }
+  };
+
+  const getPriorityColor = (category: string) => {
+    switch (category) {
+      case 'actionNeeded': return 'border-l-orange-500 bg-orange-50';
+      case 'complete': return 'border-l-emerald-500 bg-emerald-50';
+      case 'sharedDecision': return 'border-l-blue-500 bg-blue-50';
+      case 'riskBased': return 'border-l-purple-500 bg-purple-50';
+      case 'international': return 'border-l-cyan-500 bg-cyan-50';
+      case 'notRecommended': return 'border-l-gray-500 bg-gray-50';
+      default: return 'border-l-gray-500 bg-gray-50';
+    }
+  };
+
+  const getSeriesProgress = (rec: any) => {
+    // Extract dose information from notes or recommendation text
+    const text = `${rec.recommendation} ${rec.notes.join(' ')}`.toLowerCase();
+    const doseMatch = text.match(/(\d+)\s*(?:of|\/)\s*(\d+)/);
+    
+    if (doseMatch) {
+      const current = parseInt(doseMatch[1]);
+      const total = parseInt(doseMatch[2]);
+      return { current, total, percentage: (current / total) * 100 };
+    }
+    
+    // Fallback: if series is complete, assume 100%
+    if (rec.seriesComplete) {
+      return { current: 1, total: 1, percentage: 100 };
+    }
+    
+    return { current: 0, total: 1, percentage: 0 };
+  };
+
+  // Enhanced vaccine card component
+  const VaccineCard = ({ rec, category }: { rec: any, category: string }) => {
+    const progress = getSeriesProgress(rec);
+    const Icon = getPriorityIcon(category);
+    const priorityColor = getPriorityColor(category);
+
+    return (
+      <Card className={`relative overflow-hidden border-l-4 ${priorityColor} transition-all duration-200 hover:shadow-md`}>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center space-x-3">
+              <Icon className="w-5 h-5 text-gray-600 flex-shrink-0" />
+              <h4 className="text-base sm:text-lg font-semibold text-gray-900 leading-tight">{rec.vaccineName}</h4>
+            </div>
+            <div className="flex items-center space-x-2 self-start sm:self-center">
+              <Badge 
+                variant={rec.seriesComplete ? 'default' : 'secondary'}
+                className={`text-xs px-2 py-1 ${
+                  rec.decisionType === 'international-advisory' ? 'bg-blue-100 text-blue-800' :
+                  rec.decisionType === 'aged-out' ? 'bg-gray-100 text-gray-800' :
+                  rec.seriesComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'
+                }`}
+              >
+                {rec.decisionType === 'international-advisory' ? 'International Advisory' :
+                 rec.decisionType === 'aged-out' ? 'Aged Out' :
+                 rec.seriesComplete ? 'Complete' : 'Action Needed'}
+              </Badge>
+            </div>
+          </div>
+          
+          {/* Progress bar for multi-dose series */}
+          {progress.total > 1 && (
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                <span>Series Progress</span>
+                <span>{progress.current}/{progress.total} doses</span>
+              </div>
+              <Progress value={progress.percentage} className="h-2" />
+            </div>
+          )}
+        </CardHeader>
+
+        <CardContent className="space-y-3">
+          <div className="text-sm text-gray-700">
+            <div className="font-medium mb-1">Recommendation:</div>
+            <div className="text-gray-600">{rec.recommendation}</div>
+          </div>
+
+          {rec.nextDoseDate && (
+            <div className="text-sm text-blue-600 flex items-center bg-blue-50 rounded-lg p-2">
+              <Calendar className="mr-2 h-4 w-4" />
+              <span className="font-medium">Next dose due: {rec.nextDoseDate}</span>
+            </div>
+          )}
+
+          {rec.decisionType && rec.decisionType !== 'routine' && (
+            <Badge 
+              variant="outline"
+              className={`text-xs px-2 py-1 ${
+                rec.decisionType === 'international-advisory' ? 'bg-blue-50 text-blue-700 border-blue-300' :
+                rec.decisionType === 'shared-clinical-decision' ? 'bg-orange-50 text-orange-700 border-orange-300' :
+                rec.decisionType === 'risk-based' ? 'bg-purple-50 text-purple-700 border-purple-300' :
+                rec.decisionType === 'not-recommended' ? 'bg-gray-50 text-gray-700 border-gray-300' :
+                rec.decisionType === 'aged-out' ? 'bg-gray-50 text-gray-700 border-gray-300' :
+                ''
+              }`}
+            >
+              {rec.decisionType === 'international-advisory' ? 'International Advisory' :
+               rec.decisionType === 'shared-clinical-decision' ? 'Shared Clinical Decision' :
+               rec.decisionType === 'risk-based' ? 'Risk-Based Recommendation' :
+               rec.decisionType === 'not-recommended' ? 'Not Recommended' :
+               rec.decisionType === 'aged-out' ? 'Aged Out' :
+               rec.decisionType}
+            </Badge>
+          )}
+
+          {rec.notes.length > 0 && (
+            <div className="text-xs text-slate-600 bg-slate-50 rounded-lg p-3">
+              <div className="font-medium mb-2 flex items-center">
+                <Info className="w-3 h-3 mr-1" />
+                Notes:
+              </div>
+              <ul className="list-disc pl-4 space-y-1">
+                {rec.notes.map((note: string, noteIndex: number) => (
+                  <li key={noteIndex}>{note}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {rec.specialSituations && rec.specialSituations.length > 0 && (
+            <div className="text-xs text-purple-700 bg-purple-50 rounded-lg p-3">
+              <div className="font-medium mb-2 flex items-center">
+                <AlertCircle className="w-3 h-3 mr-1" />
+                Special Situations:
+              </div>
+              <ul className="list-disc pl-4 space-y-1">
+                {rec.specialSituations.map((situation: string, index: number) => (
+                  <li key={index}>{situation}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
   const [showCatchUp, setShowCatchUp] = useState(false);
   const [specialConditions, setSpecialConditions] = useState({
     immunocompromised: false,
@@ -352,6 +548,11 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
             </CardContent>
           </Card>
         )}
+        {parseVaccinesMutation.isError && (
+          <Button onClick={() => parseVaccinesMutation.mutate(form.getValues())}>
+            Retry Parsing
+          </Button>
+        )}
 
         {/* Results Section */}
         {result && (
@@ -632,115 +833,214 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
           </Card>
         )}
 
-        {/* Catch-Up Recommendations Section */}
-        {catchUpResult && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Target className="text-blue-600 mr-2" />
-                CDC Catch-Up Immunization Recommendations
-              </CardTitle>
-              <p className="text-sm text-slate-600">
-                Based on patient age ({catchUpResult.patientAge}) and current vaccine history
-              </p>
-              <div className="mt-3 p-3 bg-amber-50 rounded-lg">
-                <p className="text-sm text-amber-800">
-                  <span className="font-semibold">What's Needed Next:</span> These are vaccines the patient still needs based on their age and history. DTaP (for children) and Tdap (for adolescents/adults) are the same vaccine series.
+        {/* Enhanced Catch-Up Recommendations Section */}
+        {catchUpResult && (() => {
+          const categories = categorizeVaccines(catchUpResult.recommendations);
+          
+          // Smart default tab selection - show most important category first
+          const getDefaultTab = () => {
+            if (categories.actionNeeded.length > 0) return 'actionNeeded';
+            if (categories.sharedDecision.length > 0) return 'sharedDecision';
+            if (categories.riskBased.length > 0) return 'riskBased';
+            if (categories.international.length > 0) return 'international';
+            if (categories.complete.length > 0) return 'complete';
+            return 'notRecommended';
+          };
+          
+          return (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Target className="text-blue-600 mr-2" />
+                  CDC Catch-Up Immunization Recommendations
+                </CardTitle>
+                <p className="text-sm text-slate-600">
+                  Based on patient age ({catchUpResult.patientAge}) and current vaccine history
                 </p>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {catchUpResult.recommendations.map((rec, index) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-gray-900">{rec.vaccineName}</h4>
-                      <Badge 
-                        variant={rec.seriesComplete ? 'default' : 'secondary'}
-                        className={rec.seriesComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'}
-                      >
-                        {rec.seriesComplete ? 'Complete' : 'Action Needed'}
-                      </Badge>
-                    </div>
-                    
-                    <div className="text-sm text-gray-700 mb-3">
-                      <div className="font-medium mb-1">Recommendation:</div>
-                      <div>{rec.recommendation}</div>
-                    </div>
-
-                    {rec.nextDoseDate && (
-                      <div className="text-sm text-blue-600 mb-2 flex items-center">
-                        <Calendar className="mr-1 h-4 w-4" />
-                        Next dose due: {rec.nextDoseDate}
-                      </div>
-                    )}
-
-                    {rec.notes.length > 0 && (
-                      <div className="text-xs text-slate-600 bg-slate-50 rounded p-2">
-                        <div className="font-medium mb-1">Notes:</div>
-                        <ul className="list-disc pl-4 space-y-0.5">
-                          {rec.notes.map((note, noteIndex) => (
-                            <li key={noteIndex}>{note}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {rec.decisionType && rec.decisionType !== 'routine' && (
-                      <div className="mt-2">
-                        <Badge 
-                          variant="outline"
-                          className={
-                            rec.decisionType === 'shared-clinical-decision' ? 'bg-blue-50 text-blue-700 border-blue-300' :
-                            rec.decisionType === 'risk-based' ? 'bg-purple-50 text-purple-700 border-purple-300' :
-                            rec.decisionType === 'not-recommended' ? 'bg-gray-50 text-gray-700 border-gray-300' :
-                            ''
-                          }
-                        >
-                          {rec.decisionType === 'shared-clinical-decision' ? 'Shared Clinical Decision' :
-                           rec.decisionType === 'risk-based' ? 'Risk-Based Recommendation' :
-                           rec.decisionType === 'not-recommended' ? 'Not Recommended' :
-                           rec.decisionType}
-                        </Badge>
-                      </div>
-                    )}
-
-
-
-                    {rec.specialSituations && rec.specialSituations.length > 0 && (
-                      <div className="mt-2 text-xs text-purple-700 bg-purple-50 rounded p-2">
-                        <div className="font-medium mb-1">Special Situations:</div>
-                        <ul className="list-disc pl-4 space-y-0.5">
-                          {rec.specialSituations.map((situation, index) => (
-                            <li key={index}>{situation}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center mb-2">
-                  <Info className="text-blue-600 mr-2 h-4 w-4" />
-                  <span className="font-medium text-blue-900">Important Catch-Up Guidelines</span>
+                <div className="mt-3 p-3 bg-amber-50 rounded-lg">
+                  <p className="text-sm text-amber-800">
+                    <span className="font-semibold">What's Needed Next:</span> These are vaccines the patient still needs based on their age and history. DTaP (for children) and Tdap (for adolescents/adults) are the same vaccine series.
+                  </p>
                 </div>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Minimum intervals between doses must be maintained</li>
-                  <li>• Some vaccines have maximum age limits or special considerations</li>
-                  <li>• Always consult CDC catch-up schedule for complex cases</li>
-                  <li>• Consider individual patient factors and contraindications</li>
-                </ul>
-              </div>
+              </CardHeader>
+              
+              <CardContent>
+                {/* Action Bar */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Total vaccines:</span> {catchUpResult.recommendations.length}
+                    </div>
+                    <Separator orientation="vertical" className="h-4" />
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Action needed:</span> {categories.actionNeeded.length + categories.sharedDecision.length + categories.riskBased.length}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm" className="text-xs">
+                      <FileText className="w-3 h-3 mr-1" />
+                      Export PDF
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs">
+                      <Download className="w-3 h-3 mr-1" />
+                      Print Summary
+                    </Button>
+                  </div>
+                </div>
 
-              <div className="mt-4 text-xs text-slate-600 flex items-center justify-between">
-                <span>CDC Guidelines Version: {catchUpResult.cdcVersion}</span>
-                <span>Generated: {new Date(catchUpResult.processedAt).toLocaleString()}</span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                <Tabs defaultValue={getDefaultTab()} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 mb-6">
+                    <TabsTrigger value="actionNeeded" className="flex items-center space-x-1 text-xs sm:text-sm">
+                      <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Action Needed</span>
+                      <span className="sm:hidden">🚨</span>
+                      <span>({categories.actionNeeded.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="complete" className="flex items-center space-x-1 text-xs sm:text-sm">
+                      <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Complete</span>
+                      <span className="sm:hidden">✅</span>
+                      <span>({categories.complete.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="sharedDecision" className="flex items-center space-x-1 text-xs sm:text-sm">
+                      <User className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Shared Decision</span>
+                      <span className="sm:hidden">🤝</span>
+                      <span>({categories.sharedDecision.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="riskBased" className="flex items-center space-x-1 text-xs sm:text-sm">
+                      <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Risk-Based</span>
+                      <span className="sm:hidden">⚠️</span>
+                      <span>({categories.riskBased.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="international" className="flex items-center space-x-1 text-xs sm:text-sm">
+                      <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">International</span>
+                      <span className="sm:hidden">🌍</span>
+                      <span>({categories.international.length})</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="notRecommended" className="flex items-center space-x-1 text-xs sm:text-sm">
+                      <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Not Recommended</span>
+                      <span className="sm:hidden">❌</span>
+                      <span>({categories.notRecommended.length})</span>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="actionNeeded" className="space-y-4">
+                    {categories.actionNeeded.length > 0 ? (
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        {categories.actionNeeded.map((rec, index) => (
+                          <VaccineCard key={index} rec={rec} category="actionNeeded" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
+                        <p>No vaccinations need immediate action. Great job!</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="complete" className="space-y-4">
+                    {categories.complete.length > 0 ? (
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        {categories.complete.map((rec, index) => (
+                          <VaccineCard key={index} rec={rec} category="complete" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-orange-500" />
+                        <p>No completed vaccine series yet.</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="sharedDecision" className="space-y-4">
+                    {categories.sharedDecision.length > 0 ? (
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        {categories.sharedDecision.map((rec, index) => (
+                          <VaccineCard key={index} rec={rec} category="sharedDecision" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <User className="w-12 h-12 mx-auto mb-3 text-blue-500" />
+                        <p>No vaccines requiring shared clinical decision-making.</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="riskBased" className="space-y-4">
+                    {categories.riskBased.length > 0 ? (
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        {categories.riskBased.map((rec, index) => (
+                          <VaccineCard key={index} rec={rec} category="riskBased" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <AlertCircle className="w-12 h-12 mx-auto mb-3 text-purple-500" />
+                        <p>No risk-based vaccines to consider.</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="international" className="space-y-4">
+                    {categories.international.length > 0 ? (
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        {categories.international.map((rec, index) => (
+                          <VaccineCard key={index} rec={rec} category="international" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Globe className="w-12 h-12 mx-auto mb-3 text-cyan-500" />
+                        <p>No international or travel-related vaccines to consider.</p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="notRecommended" className="space-y-4">
+                    {categories.notRecommended.length > 0 ? (
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                        {categories.notRecommended.map((rec, index) => (
+                          <VaccineCard key={index} rec={rec} category="notRecommended" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
+                        <p>No contraindicated vaccines. Good safety profile!</p>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <Info className="text-blue-600 mr-2 h-4 w-4" />
+                    <span className="font-medium text-blue-900">Important Catch-Up Guidelines</span>
+                  </div>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Minimum intervals between doses must be maintained</li>
+                    <li>• Some vaccines have maximum age limits or special considerations</li>
+                    <li>• Always consult CDC catch-up schedule for complex cases</li>
+                    <li>• Consider individual patient factors and contraindications</li>
+                  </ul>
+                </div>
+
+                <div className="mt-4 text-xs text-slate-600 flex items-center justify-between">
+                  <span>CDC Guidelines Version: {catchUpResult.cdcVersion}</span>
+                  <span>Generated: {new Date(catchUpResult.processedAt).toLocaleString()}</span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Additional Information */}
         <Card>

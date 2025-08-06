@@ -5,11 +5,20 @@ import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+// Database is optional - app works fine without it
+if (!process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+  console.log('⚠️  No database configured - running in stateless mode (recommended for privacy)');
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+// Only create database connection if DATABASE_URL is valid
+let pool: Pool | null = null;
+let db: any = null;
+
+if (process.env.DATABASE_URL && process.env.DATABASE_URL !== 'your-neon-postgres-url') {
+  pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  db = drizzle({ client: pool, schema });
+} else {
+  console.log('⚠️  Running in development mode without database connection');
+}
+
+export { pool, db };

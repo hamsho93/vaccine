@@ -34,16 +34,28 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
+    if (!db) {
+      console.log('🔄 Mock: getUser called in dev mode');
+      return undefined;
+    }
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
+    if (!db) {
+      console.log('🔄 Mock: getUserByUsername called in dev mode');
+      return undefined;
+    }
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    if (!db) {
+      console.log('🔄 Mock: createUser called in dev mode');
+      return { id: 1, username: insertUser.username, displayName: insertUser.displayName || null, createdAt: new Date(), updatedAt: new Date() };
+    }
     const [user] = await db
       .insert(users)
       .values(insertUser)
@@ -52,6 +64,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async saveVaccineHistory(sessionId: string, rawData: string, result: VaccineHistoryResult, userId?: number): Promise<VaccineHistoryRecord> {
+    if (!db) {
+      console.log('🔄 Mock: saveVaccineHistory called in dev mode');
+      return {
+        id: 1,
+        userId,
+        sessionId,
+        rawData,
+        structuredData: result,
+        processingNotes: result.processingNotes,
+        cdcVersion: result.cdcVersion,
+        processedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
     const [record] = await db
       .insert(vaccineHistoryRecords)
       .values({
@@ -67,6 +94,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVaccineHistoryBySession(sessionId: string): Promise<VaccineHistoryRecord | undefined> {
+    if (!db) {
+      console.log('🔄 Mock: getVaccineHistoryBySession called in dev mode');
+      return undefined;
+    }
     const [record] = await db
       .select()
       .from(vaccineHistoryRecords)
@@ -76,6 +107,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async saveCatchUpRecommendations(sessionId: string, result: CatchUpResult, historyRecordId?: number): Promise<CatchUpRecommendationRecord> {
+    if (!db) {
+      console.log('🔄 Mock: saveCatchUpRecommendations called in dev mode');
+      return {
+        id: 1,
+        historyRecordId,
+        sessionId,
+        patientAge: result.patientAge,
+        recommendations: result.recommendations,
+        cdcVersion: result.cdcVersion,
+        processedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
     const [record] = await db
       .insert(catchUpRecommendations)
       .values({
@@ -90,6 +135,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCatchUpRecommendationsBySession(sessionId: string): Promise<CatchUpRecommendationRecord | undefined> {
+    if (!db) {
+      console.log('🔄 Mock: getCatchUpRecommendationsBySession called in dev mode');
+      return undefined;
+    }
     const [record] = await db
       .select()
       .from(catchUpRecommendations)

@@ -22,8 +22,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Parse the vaccine data using OpenAI
       const result = await vaccineParser.parseVaccineHistory(validatedData.vaccineData, validatedData.birthDate);
       
-      // Save to database
-      await storage.saveVaccineHistory(sessionId, validatedData.vaccineData, result);
+      // Save to database (optional - skip if no database)
+      if (process.env.DATABASE_URL && process.env.DATABASE_URL !== 'your-neon-postgres-url') {
+        await storage.saveVaccineHistory(sessionId, validatedData.vaccineData, result);
+      }
       
       // Return result with session ID
       res.json({ ...result, sessionId });
@@ -56,11 +58,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate catch-up recommendations
       const result = await vaccineCatchUp.generateCatchUpRecommendations(validatedData);
       
-      // Get the related vaccine history record
-      const historyRecord = await storage.getVaccineHistoryBySession(sessionId);
-      
-      // Save catch-up recommendations to database
-      await storage.saveCatchUpRecommendations(sessionId, result, historyRecord?.id);
+      // Save catch-up recommendations to database (optional - skip if no database)
+      if (process.env.DATABASE_URL && process.env.DATABASE_URL !== 'your-neon-postgres-url') {
+        const historyRecord = await storage.getVaccineHistoryBySession(sessionId);
+        await storage.saveCatchUpRecommendations(sessionId, result, historyRecord?.id);
+      }
       
       res.json(result);
     } catch (error) {

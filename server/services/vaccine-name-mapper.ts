@@ -33,18 +33,30 @@ export const VACCINE_MAPPINGS: VaccineMappingEntry[] = [
     ]
   },
   
-  // DTaP/Tdap series
+  // DTaP (Diphtheria, Tetanus, acellular Pertussis) - Children under 7
   {
-    standardName: 'Diphtheria, Tetanus, and Pertussis',
+    standardName: 'Diphtheria, Tetanus, and acellular Pertussis',
     internalCode: 'dtap_tdap',
-    displayName: 'DTaP/Tdap',
-    abbreviations: ['DTaP', 'Tdap', 'Td'],
+    displayName: 'DTaP',
+    abbreviations: ['DTaP', 'DTP'],
     variants: [
-      'dtap', 'tdap', 'td', 'diphtheria', 'tetanus', 'pertussis', 
+      'dtap', 'dtp', 'diphtheria', 'tetanus', 'pertussis', 
       'diphtheria-tetanus-pertussis', 'diphtheria tetanus pertussis',
       'diphtheria, tetanus, and pertussis', 'diphtheria tetanus and pertussis',
-      'dtp', 'dt', 'adacel', 'boostrix', 'infanrix', 'daptacel',
-      'pediarix', 'pentacel', 'kinrix', 'quadracel', 'vaxelis'
+      'infanrix', 'daptacel', 'pediarix', 'pentacel', 'kinrix', 'quadracel', 'vaxelis'
+    ]
+  },
+
+  // Tdap (Tetanus, diphtheria, acellular pertussis) - Adolescents and adults
+  {
+    standardName: 'Tetanus, Diphtheria, and acellular Pertussis',
+    internalCode: 'dtap_tdap',
+    displayName: 'Tdap',
+    abbreviations: ['Tdap', 'Td'],
+    variants: [
+      'tdap', 'td', 'tetanus', 'diphtheria', 'pertussis', 
+      'tetanus-diphtheria-pertussis', 'tetanus diphtheria pertussis',
+      'adacel', 'boostrix'
     ]
   },
   
@@ -194,6 +206,57 @@ export const VACCINE_MAPPINGS: VaccineMappingEntry[] = [
     variants: [
       'rsv', 'respiratory syncytial virus', 'respiratory syncytial', 
       'abrysvo', 'arexvy', 'synagis', 'beyfortus'
+    ]
+  },
+  {
+    standardName: 'Dengue',
+    internalCode: 'dengue',
+    displayName: 'Dengue',
+    abbreviations: ['DEN'],
+    variants: ['dengue', 'denv', 'dengvaxia']
+  },
+
+  // Japanese Encephalitis - Travel vaccine
+  {
+    standardName: 'Japanese Encephalitis',
+    internalCode: 'japanese_encephalitis',
+    displayName: 'Japanese Encephalitis',
+    abbreviations: ['JE'],
+    variants: [
+      'japanese encephalitis', 'je', 'ixiaro', 'japanese encephalitis virus'
+    ]
+  },
+
+  // Yellow Fever - Travel vaccine  
+  {
+    standardName: 'Yellow Fever',
+    internalCode: 'yellow_fever',
+    displayName: 'Yellow Fever',
+    abbreviations: ['YF'],
+    variants: [
+      'yellow fever', 'yf', 'yf-vax', 'stamaril', 'yellow fever vaccine'
+    ]
+  },
+
+  // Typhoid - Travel vaccine
+  {
+    standardName: 'Typhoid',
+    internalCode: 'typhoid',
+    displayName: 'Typhoid',
+    abbreviations: ['Vi', 'Ty21a'],
+    variants: [
+      'typhoid', 'typhoid fever', 'vi', 'ty21a', 'typhim vi', 'vivotif'
+    ]
+  },
+
+  // Cholera - Travel vaccine
+  {
+    standardName: 'Cholera',
+    internalCode: 'cholera',
+    displayName: 'Cholera',
+    abbreviations: ['CVD'],
+    variants: [
+      'cholera', 'vaxchora', 'cholera vaccine', 'cvd'
     ]
   }
 ];
