@@ -9,19 +9,13 @@ backend:
         - npm --version
         - echo "Installing backend dependencies..."
         - npm ci
+        - echo "Installing Amplify CLI locally..."
+        - npm install @aws-amplify/backend-cli@latest --no-save
     build:
       commands:
         - echo "Deploying Amplify Gen 2 backend..."
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
     postBuild:
       commands:
-        - echo "Backend deployment completed"
-frontend:
-  phases:
-    build:
-      commands:
-        - mkdir ./dist && echo "Backend-only app" > ./dist/index.html
-  artifacts:
-    baseDirectory: dist
-    files:
-      - '**/*'
+        - echo "Generating backend outputs..."
+        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --out-dir ./
