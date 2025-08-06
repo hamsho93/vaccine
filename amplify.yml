@@ -1,10 +1,24 @@
 version: 1
+backend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+        - echo "Installing Amplify CLI..."
+        - npm install -g @aws-amplify/backend-cli@latest
+    build:
+      commands:
+        - echo "Deploying backend with CLI..."
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+    postBuild:
+      commands:
+        - echo "Generating outputs..."
+        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --out-dir ./
 frontend:
   phases:
     preBuild:
       commands:
         - npm ci
-        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --out-dir ./
     build:
       commands:
         - npm run build:frontend
@@ -13,11 +27,7 @@ frontend:
     baseDirectory: dist/public
     files:
       - '**/*'
+      - amplify_outputs.json
   cache:
     paths:
       - node_modules/**/*
-backend:
-  phases:
-    build:
-      commands:
-        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
