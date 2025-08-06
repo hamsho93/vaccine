@@ -1,9 +1,4 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { VaccineParserService } from '../../../server/services/vaccine-parser';
-import { VaccineCatchUpService } from '../../../server/services/vaccine-catchup';
-
-const vaccineParser = new VaccineParserService();
-const vaccineCatchUp = new VaccineCatchUpService();
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -32,7 +27,13 @@ export const handler = async (
       const body = JSON.parse(event.body || '{}');
       const { vaccineData, birthDate } = body;
 
-      const result = await vaccineParser.parseVaccineHistory(vaccineData, birthDate);
+      // Simple mock response for now to test deployment
+      const result = {
+        success: true,
+        vaccines: [],
+        message: 'Vaccine parsing service is working! (Mock response)',
+        inputData: { vaccineData, birthDate }
+      };
 
       return {
         statusCode: 200,
@@ -44,7 +45,13 @@ export const handler = async (
     if (event.path === '/vaccine-catchup' || event.path === '/api/vaccine-catchup') {
       const body = JSON.parse(event.body || '{}');
       
-      const result = await vaccineCatchUp.generateCatchUpRecommendations(body);
+      // Simple mock response for now to test deployment
+      const result = {
+        success: true,
+        recommendations: [],
+        message: 'Vaccine catch-up service is working! (Mock response)',
+        inputData: body
+      };
 
       return {
         statusCode: 200,
@@ -61,7 +68,9 @@ export const handler = async (
         body: JSON.stringify({ 
           status: 'healthy', 
           timestamp: new Date().toISOString(),
-          endpoints: ['/api/parse-vaccine-history', '/api/vaccine-catchup']
+          endpoints: ['/api/parse-vaccine-history', '/api/vaccine-catchup'],
+          environment: process.env.NODE_ENV || 'production',
+          version: '1.0.0'
         }),
       };
     }
