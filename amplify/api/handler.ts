@@ -1,6 +1,6 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { VaccineParserService } from '../../server/services/vaccine-parser';
-import { VaccineCatchUpService } from '../../server/services/vaccine-catchup';
+import { VaccineParserService } from '../../../server/services/vaccine-parser.js';
+import { VaccineCatchUpService } from '../../../server/services/vaccine-catchup.js';
 
 const vaccineParser = new VaccineParserService();
 const vaccineCatchUp = new VaccineCatchUpService();

@@ -1,6 +1,26 @@
 version: 1
 applications:
   - appRoot: .
+    backend:
+      phases:
+        preBuild:
+          commands:
+            - echo "Setting Node.js version to 20..."
+            - nvm use 20 || nvm install 20
+            - node --version
+            - npm --version
+            - echo "Installing dependencies..."
+            - npm ci
+            - echo "Installing Amplify CLI locally..."
+            - npm install @aws-amplify/backend-cli@latest --no-save
+        build:
+          commands:
+            - echo "Deploying Amplify Gen 2 backend..."
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        postBuild:
+          commands:
+            - echo "Generating backend outputs..."
+            - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --out-dir ./
     frontend:
       phases:
         preBuild:
@@ -13,13 +33,14 @@ applications:
             - npm ci
         build:
           commands:
-            - echo "Building frontend from client directory..."
+            - echo "Building frontend with backend integration..."
             - npm run build:frontend
-            - echo "Frontend build completed - static hosting only"
+            - echo "Frontend build completed with backend APIs"
       artifacts:
         baseDirectory: dist/public
         files:
           - '**/*'
+          - amplify_outputs.json
       cache:
         paths:
           - node_modules/**/*
