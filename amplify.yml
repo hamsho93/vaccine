@@ -1,19 +1,19 @@
 version: 1
-build:
+frontend:
   phases:
     preBuild:
       commands:
         - npm ci
-        - echo "Installing dependencies..."
+        - echo "Installing dependencies for frontend build..."
     build:
       commands:
-        - npm run build
-        - echo "Build completed successfully"
+        - npm run build:frontend
+        - echo "Frontend build completed successfully"
+        - ls -la dist/public/
   artifacts:
-    baseDirectory: .
+    baseDirectory: dist/public
     files:
       - '**/*'
-      - node_modules/**/*
   cache:
     paths:
       - node_modules/**/*
