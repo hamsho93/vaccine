@@ -1,21 +1,25 @@
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - echo "Setting Node.js version to 20..."
-        - nvm use 20 || nvm install 20
-        - node --version
-        - npm --version
-        - npm ci
-    build:
-      commands:
-        - npm run build:frontend
-        - echo "Frontend build completed - static hosting only"
-  artifacts:
-    baseDirectory: dist/public
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
+applications:
+  - appRoot: .
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - echo "Setting Node.js version to 20..."
+            - nvm use 20 || nvm install 20
+            - node --version
+            - npm --version
+            - echo "Installing dependencies from root..."
+            - npm ci
+        build:
+          commands:
+            - echo "Building frontend from client directory..."
+            - npm run build:frontend
+            - echo "Frontend build completed - static hosting only"
+      artifacts:
+        baseDirectory: dist/public
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
