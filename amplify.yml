@@ -4,10 +4,16 @@ frontend:
     preBuild:
       commands:
         - npm ci
-        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        - echo "Building full-stack application..."
     build:
       commands:
-        - npm run build:frontend
+        - npm run build
+        - echo "Build completed"
+        - ls -la dist/
+        - ls -la dist/public/
+    post_build:
+      commands:
+        - echo "Post build - setting up for serverless deployment"
   artifacts:
     baseDirectory: dist/public
     files:
@@ -15,8 +21,3 @@ frontend:
   cache:
     paths:
       - node_modules/**/*
-backend:
-  phases:
-    build:
-      commands:
-        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
