@@ -1,7 +1,7 @@
 import { defineFunction } from '@aws-amplify/backend';
 
-export const vaccineParser = defineFunction({
-  name: 'vaccine-parser',
+export const vaccineApi = defineFunction({
+  name: 'vaccine-api',
   entry: './handler.ts',
   environment: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY!,

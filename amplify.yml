@@ -4,10 +4,11 @@ frontend:
     preBuild:
       commands:
         - npm ci
+        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --outputs-out-dir ./
     build:
       commands:
         - npm run build:frontend
-        - echo "Frontend build completed for Amplify hosting"
+        - echo "Frontend build completed with Amplify backend integration"
   artifacts:
     baseDirectory: dist/public
     files:
@@ -19,5 +20,4 @@ backend:
   phases:
     build:
       commands:
-        - npm ci
-        - echo "Backend will be deployed as Lambda functions via Amplify Gen 2"
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID

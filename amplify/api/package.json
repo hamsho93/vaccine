@@ -1,0 +1,11 @@
+{
+  "name": "vaccine-api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "handler.js",
+  "dependencies": {
+    "openai": "^4.0.0",
+    "node-fetch": "^3.3.2",
+    "zod": "^3.22.4"
+  }
+}
