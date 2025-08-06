@@ -1,7 +1,7 @@
 version: 1
 applications:
-  - appRoot: .
-    frontend:
+  - appRoot: packages/my-shared-backend
+    backend:
       phases:
         preBuild:
           commands:
@@ -9,18 +9,15 @@ applications:
             - nvm use 20 || nvm install 20
             - node --version
             - npm --version
-            - echo "Installing dependencies from root..."
+            - echo "Installing backend dependencies..."
             - npm ci
+            - echo "Installing Amplify CLI locally..."
+            - npm install @aws-amplify/backend-cli@latest --no-save
         build:
           commands:
-            - echo "Building frontend for static hosting..."
-            - npm run build:frontend
-            - echo "Frontend build completed"
-      artifacts:
-        baseDirectory: dist/public
-        files:
-          - '**/*'
-      cache:
-        paths:
-          - .npm/**/*
-          - node_modules/**/*
+            - echo "Deploying Amplify Gen 2 backend..."
+            - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+        postBuild:
+          commands:
+            - echo "Generating backend outputs..."
+            - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --out-dir ./
