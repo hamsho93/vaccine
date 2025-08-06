@@ -1,7 +1,7 @@
 import { post } from 'aws-amplify/api';
 import type { VaccineHistoryResult, CatchUpResult } from "@shared/schema";
 
-// Fallback to direct API call if Amplify configuration is not ready
+// Note: Currently no backend deployed, fallback will show helpful error
 const FALLBACK_API_URL = 'https://main.d2vu6k1z6ytpqs.amplifyapp.com';
 
 export class AmplifyVaccineService {
@@ -46,7 +46,7 @@ export class AmplifyVaccineService {
         return data as VaccineHistoryResult;
       } catch (fetchError) {
         console.error('Both Amplify and fallback failed:', fetchError);
-        throw new Error('Unable to parse vaccine history. Please try again later.');
+        throw new Error('🚧 Backend API not yet deployed. The vaccine parsing service will be available once the backend is deployed.');
       }
     }
   }
@@ -84,10 +84,10 @@ export class AmplifyVaccineService {
 
         const data = await response.json();
         return data as CatchUpResult;
-      } catch (fetchError) {
-        console.error('Both Amplify and fallback failed:', fetchError);
-        throw new Error('Unable to generate catch-up recommendations. Please try again later.');
-      }
+              } catch (fetchError) {
+          console.error('Both Amplify and fallback failed:', fetchError);
+          throw new Error('🚧 Backend API not yet deployed. The vaccine recommendation service will be available once the backend is deployed.');
+        }
     }
   }
 }
