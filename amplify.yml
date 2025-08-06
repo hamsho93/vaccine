@@ -21,3 +21,14 @@ applications:
           commands:
             - echo "Generating backend outputs..."
             - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --out-dir ./
+    frontend:
+      phases:
+        build:
+          commands:
+            - echo "Backend-only app - creating minimal frontend placeholder"
+            - mkdir -p ./dist
+            - echo "Backend API deployed successfully" > ./dist/index.html
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
