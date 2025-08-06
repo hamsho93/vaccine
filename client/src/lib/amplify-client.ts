@@ -1,9 +1,13 @@
 import { post } from 'aws-amplify/api';
 import type { VaccineHistoryResult, CatchUpResult } from "@shared/schema";
 
+// Fallback to direct API call if Amplify configuration is not ready
+const FALLBACK_API_URL = 'https://main.d2vu6k1z6ytpqs.amplifyapp.com';
+
 export class AmplifyVaccineService {
   async parseVaccineHistory(vaccineData: string, birthDate?: string): Promise<VaccineHistoryResult> {
     try {
+      // Try Amplify API first
       const operation = post({
         apiName: 'vaccine-api',
         path: '/api/parse-vaccine-history',
@@ -18,14 +22,38 @@ export class AmplifyVaccineService {
       const response = await operation.response;
       const data = await response.body.json();
       return data as VaccineHistoryResult;
-    } catch (error) {
-      console.error('Error parsing vaccine history:', error);
-      throw error;
+    } catch (amplifyError) {
+      console.warn('Amplify API failed, trying fallback:', amplifyError);
+      
+      // Fallback to direct fetch call
+      try {
+        const response = await fetch('/api/parse-vaccine-history', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            vaccineData,
+            birthDate
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data as VaccineHistoryResult;
+      } catch (fetchError) {
+        console.error('Both Amplify and fallback failed:', fetchError);
+        throw new Error('Unable to parse vaccine history. Please try again later.');
+      }
     }
   }
 
   async generateCatchUpRecommendations(request: any): Promise<CatchUpResult> {
     try {
+      // Try Amplify API first
       const operation = post({
         apiName: 'vaccine-api', 
         path: '/api/vaccine-catchup',
@@ -37,9 +65,29 @@ export class AmplifyVaccineService {
       const response = await operation.response;
       const data = await response.body.json();
       return data as CatchUpResult;
-    } catch (error) {
-      console.error('Error generating catch-up recommendations:', error);
-      throw error;
+    } catch (amplifyError) {
+      console.warn('Amplify API failed, trying fallback:', amplifyError);
+      
+      // Fallback to direct fetch call
+      try {
+        const response = await fetch('/api/vaccine-catchup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data as CatchUpResult;
+      } catch (fetchError) {
+        console.error('Both Amplify and fallback failed:', fetchError);
+        throw new Error('Unable to generate catch-up recommendations. Please try again later.');
+      }
     }
   }
 }
