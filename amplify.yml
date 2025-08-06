@@ -1,26 +1,19 @@
 version: 1
-build:
+frontend:
   phases:
     preBuild:
       commands:
         - npm ci
-        - echo "Building full-stack application with Express backend..."
+        - echo "Building React frontend for static hosting..."
     build:
       commands:
-        - npm run build
-        - echo "Build completed - both frontend and backend ready"
-        - ls -la dist/
-        - echo "Creating startup script..."
-        - echo 'web: npm start' > Procfile
+        - npm run build:frontend
+        - echo "Frontend build completed"
+        - ls -la dist/public/
   artifacts:
-    baseDirectory: .
+    baseDirectory: dist/public
     files:
-      - dist/**/*
-      - server/**/*
-      - shared/**/*
-      - package.json
-      - Procfile
-      - node_modules/**/*
+      - '**/*'
   cache:
     paths:
       - node_modules/**/*
