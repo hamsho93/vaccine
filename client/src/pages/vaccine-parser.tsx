@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { amplifyVaccineService } from "@/lib/amplify-client";
+import { apiRequest } from "@/lib/queryClient";
 import { ParseVaccineHistoryRequest, VaccineHistoryResult, CatchUpRequest, CatchUpResult } from "@shared/schema";
 import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -241,7 +241,10 @@ export default function VaccineParser() {
 
   const parseVaccinesMutation = useMutation({
     mutationFn: async (data: ParseVaccineHistoryRequest) => {
-      return await amplifyVaccineService.parseVaccineHistory(data.vaccineData, data.birthDate);
+      const response = await apiRequest("POST", "/api/parse-vaccine-history", data, {
+        'X-Session-ID': sessionId
+      });
+      return await response.json();
     },
     onSuccess: (data: VaccineHistoryResult) => {
       setResult(data);
@@ -263,7 +266,10 @@ export default function VaccineParser() {
 
   const catchUpMutation = useMutation({
     mutationFn: async (data: CatchUpRequest) => {
-      return await amplifyVaccineService.generateCatchUpRecommendations(data);
+      const response = await apiRequest("POST", "/api/vaccine-catchup", data, {
+        'X-Session-ID': sessionId
+      });
+      return await response.json();
     },
     onSuccess: (data: CatchUpResult) => {
       setCatchUpResult(data);

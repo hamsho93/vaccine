@@ -1,23 +1,26 @@
 version: 1
-frontend:
+build:
   phases:
     preBuild:
       commands:
         - npm ci
-        - echo "Building full-stack application..."
+        - echo "Building full-stack application with Express backend..."
     build:
       commands:
         - npm run build
-        - echo "Build completed"
+        - echo "Build completed - both frontend and backend ready"
         - ls -la dist/
-        - ls -la dist/public/
-    post_build:
-      commands:
-        - echo "Post build - setting up for serverless deployment"
+        - echo "Creating startup script..."
+        - echo 'web: npm start' > Procfile
   artifacts:
-    baseDirectory: dist/public
+    baseDirectory: .
     files:
-      - '**/*'
+      - dist/**/*
+      - server/**/*
+      - shared/**/*
+      - package.json
+      - Procfile
+      - node_modules/**/*
   cache:
     paths:
       - node_modules/**/*
