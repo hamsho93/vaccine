@@ -1,32 +1,26 @@
 version: 1
-backend:
-  phases:
-    build:
-      commands:
-        - echo "Frontend app - connecting to shared backend..."
-        - npm ci --cache .npm --prefer-offline
-        - npx ampx generate outputs --branch main --app-id BACKEND-APPID
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - echo "Setting Node.js version to 20..."
-        - nvm use 20 || nvm install 20
-        - node --version
-        - npm --version
-        - echo "Installing dependencies from root..."
-        - npm ci
-    build:
-      commands:
-        - echo "Building frontend with backend connection..."
-        - npm run build:frontend
-        - echo "Frontend build completed with backend APIs"
-  artifacts:
-    baseDirectory: dist/public
-    files:
-      - '**/*'
-      - amplify_outputs.json
-  cache:
-    paths:
-      - .npm/**/*
-      - node_modules/**/*
+applications:
+  - appRoot: .
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - echo "Setting Node.js version to 20..."
+            - nvm use 20 || nvm install 20
+            - node --version
+            - npm --version
+            - echo "Installing dependencies from root..."
+            - npm ci
+        build:
+          commands:
+            - echo "Building frontend for static hosting..."
+            - npm run build:frontend
+            - echo "Frontend build completed"
+      artifacts:
+        baseDirectory: dist/public
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - .npm/**/*
+          - node_modules/**/*
