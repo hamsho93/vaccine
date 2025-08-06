@@ -1,33 +1,21 @@
 version: 1
-backend:
-  phases:
-    preBuild:
-      commands:
-        - npm ci
-        - echo "Installing Amplify CLI..."
-        - npm install -g @aws-amplify/backend-cli@latest
-    build:
-      commands:
-        - echo "Deploying backend with CLI..."
-        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-    postBuild:
-      commands:
-        - echo "Generating outputs..."
-        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --out-dir ./
 frontend:
   phases:
     preBuild:
       commands:
+        - echo "Setting Node.js version to 20..."
+        - nvm use 20 || nvm install 20
+        - node --version
+        - npm --version
         - npm ci
     build:
       commands:
         - npm run build:frontend
-        - echo "Frontend build completed with Amplify backend integration"
+        - echo "Frontend build completed - static hosting only"
   artifacts:
     baseDirectory: dist/public
     files:
       - '**/*'
-      - amplify_outputs.json
   cache:
     paths:
       - node_modules/**/*
