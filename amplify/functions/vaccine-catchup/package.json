@@ -1,9 +1,0 @@
-{
-  "name": "vaccine-catchup",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "handler.js",
-  "dependencies": {
-    "zod": "^3.22.4"
-  }
-}
