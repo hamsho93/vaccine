@@ -4,7 +4,7 @@ frontend:
     preBuild:
       commands:
         - npm ci
-        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --outputs-out-dir ./
+        - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --out-dir ./
     build:
       commands:
         - npm run build:frontend
