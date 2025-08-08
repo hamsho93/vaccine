@@ -1,0 +1,44 @@
+name: review-gate
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  require-approvals:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce minimum approvals
+        uses: actions/github-script@v7
+        env:
+          REVIEWERS_REQUIRED: "1"
+        with:
+          script: |
+            const pr = context.payload.pull_request
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+            const prNumber = pr.number
+
+            const { data: reviews } = await github.rest.pulls.listReviews({ owner, repo, pull_number: prNumber })
+
+            // Count unique approvers, excluding the author
+            const author = pr.user.login
+            const approvers = new Set()
+            for (const r of reviews) {
+              if (r.state === 'APPROVED' && r.user?.login && r.user.login !== author) {
+                approvers.add(r.user.login)
+              }
+            }
+
+            const required = parseInt(process.env.REVIEWERS_REQUIRED || '1', 10)
+            const have = approvers.size
+
+            core.info(`Approvals (excluding author ${author}): ${have}. Required: ${required}`)
+            if (have < required) {
+              core.setFailed(`Need at least ${required} approval(s) from a reviewer other than the author. Got ${have}.`)
+            }
+
