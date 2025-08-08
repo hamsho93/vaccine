@@ -1,16 +1,14 @@
-import { VaccineDoseInfo, addDays, VaccineRecommendation, getAgeInYears } from '../vaccine-catchup.ts';
-import { getVaccineRules, SpecialConditions } from '../vaccine-cdc-rules';
+import { VaccineDoseInfo, addDays, getAgeInYears } from '../vaccine-catchup';
+import type { VaccineRecommendation } from '@shared/schema';
 
 export function meningococcalBRecommendation(
-  normalizedName: string, 
-  birthDate: Date, 
-  currentDate: Date, 
-  validDoses: VaccineDoseInfo[], 
-  numDoses: number, 
-  sortedDoses: VaccineDoseInfo[], 
-  specialConditions: SpecialConditions, 
-  immunityEvidence: any
-): VaccineRecommendation {
+  normalizedName: string,
+  birthDate: Date,
+  currentDate: Date,
+  validDoses: VaccineDoseInfo[],
+  numDoses: number,
+  sortedDoses: VaccineDoseInfo[]
+): VaccineRecommendation | null {
   const currentAgeYears = getAgeInYears(birthDate, currentDate);
   
   if (currentAgeYears < 10) {
