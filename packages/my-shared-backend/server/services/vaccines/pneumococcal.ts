@@ -1,4 +1,5 @@
-import { VaccineDoseInfo, addDays, formatDate, getAgeInDays, getAgeInMonths, VaccineRecommendation } from '../vaccine-catchup.ts';
+import { VaccineDoseInfo, addDays, formatDate, getAgeInDays, getAgeInMonths } from '../vaccine-catchup';
+import type { VaccineRecommendation } from '@shared/schema';
 import { getVaccineRules, SpecialConditions } from '../vaccine-cdc-rules';
 
 export function pneumococcalRecommendation(
@@ -62,7 +63,13 @@ export function pneumococcalRecommendation(
   }
   
   // Check for high-risk conditions that require additional vaccination
-  if (specialConditions?.immunocompromised || specialConditions?.chronicConditions) {
+  if (
+    specialConditions?.immunocompromised ||
+    specialConditions?.asplenia ||
+    specialConditions?.cochlearImplant ||
+    specialConditions?.csfLeak ||
+    specialConditions?.hivInfection
+  ) {
     notes.push('High-risk conditions may require additional pneumococcal vaccination');
     notes.push('Consult provider for PPSV23 recommendations');
   }
