@@ -8,10 +8,10 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      lines: 0.6,
-      functions: 0.6,
-      branches: 0.6,
-      statements: 0.6,
+      lines: 60,
+      functions: 60,
+      branches: 60,
+      statements: 60,
       all: true,
       include: ['client/src/**/*', 'packages/my-shared-backend/server/**/*', 'shared/**/*', 'tests/**/*'],
       exclude: ['**/*.d.ts', 'node_modules/**', 'dist/**']
