@@ -1,5 +1,37 @@
 version: 1
 applications:
+  # Frontend app (React + Vite)
+  - appRoot: .
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - echo "Setting Node.js version to 20..."
+            - nvm use 20 || nvm install 20
+            - node --version
+            - npm --version
+            - echo "Installing dependencies from root..."
+            - npm ci
+            - echo "Installing Amplify backend CLI to generate outputs..."
+            - npm install @aws-amplify/backend-cli@latest --no-save
+            - echo "Generating backend outputs for frontend consumption..."
+            - npx ampx generate outputs --branch $AWS_BRANCH --app-id $BACKEND_APP_ID --out-dir ./
+        build:
+          commands:
+            - echo "Building frontend for static hosting..."
+            - npm run build:frontend
+            - echo "Frontend build completed"
+      artifacts:
+        baseDirectory: dist/public
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - .npm/**/*
+          - node_modules/**/*
+    # No backend section for the frontend app
+
+  # Backend app (Amplify Gen 2)
   - appRoot: packages/my-shared-backend
     backend:
       phases:
@@ -21,6 +53,7 @@ applications:
           commands:
             - echo "Generating backend outputs..."
             - npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID --out-dir ./
+    # Minimal frontend is required by Amplify's monorepo validator
     frontend:
       phases:
         build:
