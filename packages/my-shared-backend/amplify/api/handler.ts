@@ -112,13 +112,13 @@ export const handler = async (
     if (path === '/vaccine-catchup' || path === '/api/vaccine-catchup') {
       const body = JSON.parse(event.body || '{}');
       
-      if (!body.birthDate || !body.vaccines) {
+      if (!body.birthDate || !body.vaccineHistory) {
         return {
           statusCode: 400,
           headers,
           body: JSON.stringify({ 
-            error: 'Missing required fields: birthDate and vaccines',
-            expected: { birthDate: 'string', vaccines: 'array' }
+            error: 'Missing required fields: birthDate and vaccineHistory',
+            expected: { birthDate: 'string', vaccineHistory: 'array', specialConditions: 'object (optional)' }
           }),
         };
       }
