@@ -1,7 +1,10 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
+// Support both API Gateway v1 (REST) and v2 (HTTP) event formats
+type APIEvent = APIGatewayProxyEvent | any;
+
 export const handler = async (
-  event: APIGatewayProxyEvent
+  event: APIEvent
 ): Promise<APIGatewayProxyResult> => {
   const headers = {
     'Content-Type': 'application/json',
@@ -10,8 +13,8 @@ export const handler = async (
     'Access-Control-Allow-Headers': 'Content-Type, X-Session-ID',
   };
 
-  // Handle CORS preflight
-  const httpMethod = event.requestContext?.http?.method || event.httpMethod;
+  // Handle CORS preflight - support both API Gateway v1 and v2 formats
+  const httpMethod = (event.requestContext?.http?.method) || event.httpMethod;
   const path = event.rawPath || event.path;
   
   if (httpMethod === 'OPTIONS') {
