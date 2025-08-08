@@ -1,5 +1,5 @@
 import { VaccineDoseInfo, getAgeInMonths, getAgeInYears } from '../vaccine-catchup';
-import type { VaccineRecommendation } from '@shared/schema';
+import type { VaccineRecommendation } from '../../../shared/schema';
 import { SpecialConditions } from '../vaccine-cdc-rules';
 
 export function rsvRecommendation(
