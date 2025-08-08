@@ -42,7 +42,7 @@ applications:
             - node --version
             - npm --version
             - echo "Installing backend dependencies..."
-            - npm ci || npm install --no-audit --no-fund
+            - npm install --no-audit --no-fund
             - echo "Installing Amplify CLI locally..."
             - npm install @aws-amplify/backend-cli@latest --no-save
         build:
