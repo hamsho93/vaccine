@@ -1,4 +1,4 @@
-import { CatchUpRequest, CatchUpResult, VaccineRecommendation } from "@shared/schema";
+import { CatchUpRequest, CatchUpResult, VaccineRecommendation } from "../../shared/schema";
 import { vaccineNameMapper } from "./vaccine-name-mapper";
 import { 
   getVaccineRules, 
@@ -457,7 +457,7 @@ export class VaccineCatchUpService {
       }
       
       // Add doses to the combined history
-      const doses = vaccineHistory.doses.map(dose => ({
+      const doses = vaccineHistory.doses.map((dose: any) => ({
         date: this.parseDate(dose.date),
         product: dose.product
       }));

@@ -1,5 +1,5 @@
 import { VaccineDoseInfo, addDays, formatDate, getAgeInDays, getAgeInMonths } from '../vaccine-catchup';
-import type { VaccineRecommendation } from '@shared/schema';
+import type { VaccineRecommendation } from '../../../shared/schema';
 import { getVaccineRules, SpecialConditions } from '../vaccine-cdc-rules';
 
 export function pneumococcalRecommendation(
