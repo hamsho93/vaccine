@@ -1,5 +1,5 @@
 import { VaccineDoseInfo, getAgeInYears } from '../vaccine-catchup';
-import type { VaccineRecommendation } from '@shared/schema';
+import type { VaccineRecommendation } from '../../../shared/schema';
 
 export function dengueRecommendation(
   normalizedName: string,

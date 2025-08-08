@@ -1,5 +1,5 @@
 import { VaccineDoseInfo, getAgeInDays, getAgeInMonths, addDays, formatDate } from '../vaccine-catchup';
-import type { VaccineRecommendation } from '@shared/schema';
+import type { VaccineRecommendation } from '../../../shared/schema';
 import { SpecialConditions } from '../vaccine-cdc-rules';
 
 export function rotavirusRecommendation(
