@@ -1,4 +1,5 @@
-import { VaccineDoseInfo, addDays, formatDate, getAgeInDays, getAgeInYears, VaccineRecommendation } from '../vaccine-catchup.ts';
+import { VaccineDoseInfo, addDays, formatDate, getAgeInDays, getAgeInYears } from '../vaccine-catchup';
+import type { VaccineRecommendation } from '@shared/schema';
 import { getVaccineRules, SpecialConditions } from '../vaccine-cdc-rules';
 
 export function varicellaRecommendation(
