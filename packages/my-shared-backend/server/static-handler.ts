@@ -1,4 +1,5 @@
 import { Express } from 'express';
+import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 

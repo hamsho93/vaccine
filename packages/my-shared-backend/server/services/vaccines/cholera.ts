@@ -7,7 +7,9 @@ export function choleraRecommendation(
   currentDate: Date,
   validDoses: VaccineDoseInfo[],
   numDoses: number,
-  sortedDoses: VaccineDoseInfo[]
+  sortedDoses: VaccineDoseInfo[],
+  specialConditions?: any,
+  immunityEvidence?: any
 ): VaccineRecommendation | null {
   let seriesComplete = false;
   let recommendation = '';

@@ -1,5 +1,5 @@
 import { VaccineDoseInfo, getAgeInYears } from '../vaccine-catchup';
-import type { VaccineRecommendation } from '@shared/schema';
+import type { VaccineRecommendation } from '../../../shared/schema';
 
 export function japaneseEncephalitisRecommendation(
   normalizedName: string,
@@ -7,7 +7,9 @@ export function japaneseEncephalitisRecommendation(
   currentDate: Date,
   validDoses: VaccineDoseInfo[],
   numDoses: number,
-  sortedDoses: VaccineDoseInfo[]
+  sortedDoses: VaccineDoseInfo[],
+  specialConditions?: any,
+  immunityEvidence?: any
 ): VaccineRecommendation | null {
   let seriesComplete = false;
   let recommendation = '';

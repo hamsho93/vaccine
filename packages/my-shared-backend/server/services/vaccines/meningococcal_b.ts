@@ -7,7 +7,9 @@ export function meningococcalBRecommendation(
   currentDate: Date,
   validDoses: VaccineDoseInfo[],
   numDoses: number,
-  sortedDoses: VaccineDoseInfo[]
+  sortedDoses: VaccineDoseInfo[],
+  specialConditions?: any,
+  immunityEvidence?: any
 ): VaccineRecommendation | null {
   const currentAgeYears = getAgeInYears(birthDate, currentDate);
   

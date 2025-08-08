@@ -1,4 +1,4 @@
-import { VaccineDoseInfo, addDays, getAgeInMonths, getAgeInYears } from '../vaccine-catchup';
+import { VaccineDoseInfo, addDays, getAgeInMonths, getAgeInYears, formatDate } from '../vaccine-catchup';
 import type { VaccineRecommendation } from '../../../shared/schema';
 import { getVaccineRules, SpecialConditions } from '../vaccine-cdc-rules';
 

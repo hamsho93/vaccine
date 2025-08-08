@@ -490,7 +490,7 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
   'covid19': {
     minimumAge: 180, // 6 months
     dosesRequired: (ageYears) => ageYears < 5 ? 3 : 1, // Default to Pfizer-like
-    minimumIntervals: (product) => product === 'Moderna' ? [28] : [21, 56],
+    minimumIntervals: [21, 28], // General intervals, product-specific logic handled in vaccine function
     contraindications: [],
     precautions: [],
     specialSituations: [],
