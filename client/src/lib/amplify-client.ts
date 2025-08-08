@@ -1,8 +1,8 @@
 import { post } from 'aws-amplify/api';
 import type { VaccineHistoryResult, CatchUpResult } from "@shared/schema";
 
-// Note: Currently no backend deployed, fallback will show helpful error
-const FALLBACK_API_URL = 'https://main.d2vu6k1z6ytpqs.amplifyapp.com';
+// Backend API URL for the deployed vaccine service
+const BACKEND_API_URL = 'https://76hqbcmos7.execute-api.us-east-1.amazonaws.com';
 
 export class AmplifyVaccineService {
   async parseVaccineHistory(vaccineData: string, birthDate?: string): Promise<VaccineHistoryResult> {
@@ -25,9 +25,9 @@ export class AmplifyVaccineService {
     } catch (amplifyError) {
       console.warn('Amplify API failed, trying fallback:', amplifyError);
       
-      // Fallback to direct fetch call
+      // Fallback to direct backend API call
       try {
-        const response = await fetch('/api/parse-vaccine-history', {
+        const response = await fetch(`${BACKEND_API_URL}/api/parse-vaccine-history`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ export class AmplifyVaccineService {
         return data as VaccineHistoryResult;
       } catch (fetchError) {
         console.error('Both Amplify and fallback failed:', fetchError);
-        throw new Error('🚧 Backend API not yet deployed. The vaccine parsing service will be available once the backend is deployed.');
+        throw new Error('❌ Unable to connect to vaccine parsing service. Please check your connection and try again.');
       }
     }
   }
@@ -68,9 +68,9 @@ export class AmplifyVaccineService {
     } catch (amplifyError) {
       console.warn('Amplify API failed, trying fallback:', amplifyError);
       
-      // Fallback to direct fetch call
+      // Fallback to direct backend API call
       try {
-        const response = await fetch('/api/vaccine-catchup', {
+        const response = await fetch(`${BACKEND_API_URL}/api/vaccine-catchup`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ export class AmplifyVaccineService {
         return data as CatchUpResult;
               } catch (fetchError) {
           console.error('Both Amplify and fallback failed:', fetchError);
-          throw new Error('🚧 Backend API not yet deployed. The vaccine recommendation service will be available once the backend is deployed.');
+          throw new Error('❌ Unable to connect to vaccine recommendation service. Please check your connection and try again.');
         }
     }
   }
