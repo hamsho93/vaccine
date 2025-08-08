@@ -8,12 +8,17 @@ type APIEvent = APIGatewayProxyEvent | any;
 export const handler = async (
   event: APIEvent
 ): Promise<APIGatewayProxyResult> => {
+  // Tighten CORS: allow only the deployed Amplify frontend domain
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://d2ahzdteujgz7m.amplifyapp.com';
+  const requestOrigin = event.headers?.origin || event.headers?.Origin;
+  const corsOrigin = requestOrigin && requestOrigin === allowedOrigin ? allowedOrigin : allowedOrigin;
+
   const headers = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': corsOrigin,
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Session-ID',
-  };
+  } as const;
 
   // Handle CORS preflight - support both API Gateway v1 and v2 formats
   const httpMethod = (event.requestContext?.http?.method) || event.httpMethod;
