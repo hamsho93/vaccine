@@ -1,27 +1,26 @@
 import { createRoot } from "react-dom/client";
 import { Amplify } from "aws-amplify";
-import { parseAmplifyConfig } from "aws-amplify/utils";
 import App from "./App";
 import "./index.css";
 
-// Configure Amplify with backend outputs
+// Configure Amplify - simplified for frontend-only deployment
 async function configureAmplify() {
   try {
-    const outputs = await import("../../amplify_outputs.json");
-    const amplifyConfig = parseAmplifyConfig(outputs.default);
-    
-    // Configure Amplify with REST API support
+    // Basic Amplify configuration for frontend
     Amplify.configure({
-      ...amplifyConfig,
       API: {
-        ...amplifyConfig.API,
-        REST: outputs.default.custom?.API || {},
-      },
+        REST: {
+          'vaccine-api': {
+            endpoint: 'https://76hqbcmos7.execute-api.us-east-1.amazonaws.com',
+            region: 'us-east-1'
+          }
+        }
+      }
     });
     
-    console.log("✅ Amplify configured with backend and REST API");
+    console.log("✅ Amplify configured with vaccine API endpoint");
   } catch (error) {
-    console.log("⚠️ Amplify outputs not found - running without backend connection");
+    console.log("⚠️ Amplify configuration failed:", error);
   }
 }
 
