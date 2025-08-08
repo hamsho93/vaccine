@@ -36,6 +36,9 @@ module.exports = {
     'react/prop-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     'import/no-unresolved': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
+    'react/no-unknown-property': 'off',
+    'import/no-duplicates': 'warn',
   },
   ignorePatterns: [
     'node_modules/',
@@ -43,6 +46,10 @@ module.exports = {
     'build/',
     '.amplify/',
     'amplify/',
+    'lambda-dist/',
+    'lambda-dist/**',
+    'packages/my-shared-backend/server/**/*.js',
+    'packages/my-shared-backend/server/**/*.js.map',
   ],
 };
 

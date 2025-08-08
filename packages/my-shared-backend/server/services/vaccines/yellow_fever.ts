@@ -14,7 +14,7 @@ export function yellowFeverRecommendation(
 ): VaccineRecommendation {
   let seriesComplete = false;
   let recommendation = '';
-  let nextDoseDate: string | undefined = undefined;
+  const nextDoseDate: string | undefined = undefined;
   const notes: string[] = [];
   
   const currentAgeYears = getAgeInYears(birthDate, currentDate);

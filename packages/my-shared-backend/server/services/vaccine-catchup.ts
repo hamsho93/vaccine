@@ -281,7 +281,7 @@ export class VaccineCatchUpService {
     let nextDoseDate: string | undefined;
     let seriesComplete = false;
     const notes: string[] = [];
-    let decisionType: VaccineRecommendation['decisionType'] = 'routine';
+    const decisionType: VaccineRecommendation['decisionType'] = 'routine';
     const contraindications: string[] = [];
     const precautions: string[] = [];
     const specialSituations: string[] = [];

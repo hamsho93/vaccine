@@ -14,7 +14,7 @@ export function pneumococcalRecommendation(
 ): VaccineRecommendation {
   let seriesComplete = false;
   let recommendation = '';
-  let nextDoseDate: string | undefined = undefined;
+  const nextDoseDate: string | undefined = undefined;
   const notes: string[] = [];
   // Pneumococcal vaccination logic based on CDC guidelines
   const currentAgeYears = Math.floor(getAgeInDays(birthDate, currentDate) / 365.25);

@@ -15,7 +15,7 @@ export function influenzaRecommendation(
   const doses = validDoses;
   let seriesComplete = false;
   let recommendation = '';
-  let nextDoseDate: string | undefined = undefined;
+  const nextDoseDate: string | undefined = undefined;
   const notes: string[] = [];
   const getCurrentSeason = (date: Date) => {
     const year = date.getFullYear();

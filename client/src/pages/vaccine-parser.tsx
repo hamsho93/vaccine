@@ -451,7 +451,7 @@ export default function VaccineParser() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Enter the patient's birth date to calculate their current age
+                        Enter the patient&apos;s birth date to calculate their current age
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -853,7 +853,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                 </p>
                 <div className="mt-3 p-3 bg-amber-50 rounded-lg">
                   <p className="text-sm text-amber-800">
-                    <span className="font-semibold">What's Needed Next:</span> These are vaccines the patient still needs based on their age and history. DTaP (for children) and Tdap (for adolescents/adults) are the same vaccine series.
+                    <span className="font-semibold">What&apos;s Needed Next:</span> These are vaccines the patient still needs based on their age and history. DTaP (for children) and Tdap (for adolescents/adults) are the same vaccine series.
                   </p>
                 </div>
               </CardHeader>
