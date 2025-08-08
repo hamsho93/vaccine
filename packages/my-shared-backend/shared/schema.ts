@@ -1,10 +1,8 @@
 import { z } from "zod";
-import { pgTable, serial, text, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 
 export const VaccineDose = z.object({
-  date: z.string(), // ISO date string
-  patientAge: z.string(), // e.g., "3 months", "4 years"
+  date: z.string(),
+  patientAge: z.string(),
 });
 
 export const VaccineRecord = z.object({
@@ -16,7 +14,7 @@ export const VaccineRecord = z.object({
 });
 
 export const PatientInfo = z.object({
-  dateOfBirth: z.string().optional(), // ISO date string
+  dateOfBirth: z.string().optional(),
   currentAge: z.string().optional(),
   totalVaccines: z.number(),
 });
@@ -26,34 +24,34 @@ export const VaccineHistoryResult = z.object({
   vaccines: z.array(VaccineRecord),
   processingNotes: z.array(z.string()),
   cdcVersion: z.string(),
-  processedAt: z.string(), // ISO date string
+  processedAt: z.string(),
 });
 
 export const ParseVaccineHistoryRequest = z.object({
   vaccineData: z.string().min(1, "Vaccine data is required"),
-  birthDate: z.string(), // ISO date string YYYY-MM-DD
+  birthDate: z.string(),
 });
 
 export const VaccineRecommendation = z.object({
   vaccineName: z.string(),
   recommendation: z.string(),
-  nextDoseDate: z.string().optional(), // ISO date string
+  nextDoseDate: z.string().optional(),
   seriesComplete: z.boolean(),
   notes: z.array(z.string()),
-  decisionType: z.enum(["routine", "catch-up", "shared-clinical-decision", "risk-based", "not-recommended", "international-advisory", "aged-out"]).optional(),
+  decisionType: z.enum(["routine","catch-up","shared-clinical-decision","risk-based","not-recommended","international-advisory","aged-out"]).optional(),
   contraindications: z.array(z.string()).optional(),
   precautions: z.array(z.string()).optional(),
   specialSituations: z.array(z.string()).optional(),
 });
 
 export const CatchUpRequest = z.object({
-  birthDate: z.string(), // ISO date string
-  currentDate: z.string().optional(), // ISO date string, defaults to today
+  birthDate: z.string(),
+  currentDate: z.string().optional(),
   vaccineHistory: z.array(z.object({
     vaccineName: z.string(),
     doses: z.array(z.object({
-      date: z.string(), // ISO date string
-      product: z.string().optional(), // Optional product name
+      date: z.string(),
+      product: z.string().optional(),
     })),
   })),
   specialConditions: z.object({
@@ -69,7 +67,7 @@ export const CatchUpRequest = z.object({
     chronicLiverDisease: z.boolean().optional(),
     chronicKidneyDisease: z.boolean().optional(),
   }).optional(),
-  immunityEvidence: z.record(z.string(), z.boolean()).optional(), // vaccine name -> has immunity
+  immunityEvidence: z.record(z.string(), z.boolean()).optional(),
 });
 
 export const CatchUpResult = z.object({
@@ -87,50 +85,3 @@ export type ParseVaccineHistoryRequest = z.infer<typeof ParseVaccineHistoryReque
 export type VaccineRecommendation = z.infer<typeof VaccineRecommendation>;
 export type CatchUpRequest = z.infer<typeof CatchUpRequest>;
 export type CatchUpResult = z.infer<typeof CatchUpResult>;
-
-// Database Tables
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const vaccineHistoryRecords = pgTable("vaccine_history_records", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  sessionId: text("session_id").notNull(), // For anonymous sessions
-  rawData: text("raw_data").notNull(),
-  structuredData: jsonb("structured_data").notNull(),
-  processingNotes: text("processing_notes").array(),
-  cdcVersion: text("cdc_version").notNull(),
-  processedAt: timestamp("processed_at").defaultNow().notNull(),
-});
-
-export const catchUpRecommendations = pgTable("catch_up_recommendations", {
-  id: serial("id").primaryKey(),
-  historyRecordId: integer("history_record_id").references(() => vaccineHistoryRecords.id),
-  sessionId: text("session_id").notNull(),
-  patientAge: text("patient_age").notNull(),
-  recommendations: jsonb("recommendations").notNull(),
-  cdcVersion: text("cdc_version").notNull(),
-  processedAt: timestamp("processed_at").defaultNow().notNull(),
-});
-
-// Insert schemas
-export const insertUser = createInsertSchema(users).omit({ id: true, createdAt: true });
-export const insertVaccineHistoryRecord = createInsertSchema(vaccineHistoryRecords).omit({ 
-  id: true, 
-  processedAt: true 
-});
-export const insertCatchUpRecommendation = createInsertSchema(catchUpRecommendations).omit({ 
-  id: true, 
-  processedAt: true 
-});
-
-// Types
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUser>;
-export type VaccineHistoryRecord = typeof vaccineHistoryRecords.$inferSelect;
-export type InsertVaccineHistoryRecord = z.infer<typeof insertVaccineHistoryRecord>;
-export type CatchUpRecommendationRecord = typeof catchUpRecommendations.$inferSelect;
-export type InsertCatchUpRecommendation = z.infer<typeof insertCatchUpRecommendation>;
