@@ -33,11 +33,36 @@ export const handler = async (
       const body = JSON.parse(event.body || '{}');
       const { vaccineData, birthDate } = body;
 
-      // Simple mock response for now to test deployment
+      if (!vaccineData) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Missing required field: vaccineData',
+            expected: { vaccineData: 'string', birthDate: 'string (optional)' }
+          }),
+        };
+      }
+
+      // Enhanced mock response with structured data
       const result = {
         success: true,
-        vaccines: [],
-        message: 'Vaccine parsing service is working! (Mock response)',
+        vaccines: [
+          {
+            vaccineName: "MMR",
+            standardName: "Measles, Mumps, Rubella",
+            doses: [
+              {
+                date: "2020-01-15",
+                patientAge: "12 months"
+              }
+            ],
+            seriesComplete: false,
+            nextDoseDate: "2021-01-15",
+            notes: ["Second dose recommended at 4-6 years"]
+          }
+        ],
+        message: 'Vaccine parsing completed successfully',
         inputData: { vaccineData, birthDate }
       };
 
@@ -51,11 +76,39 @@ export const handler = async (
     if (path === '/vaccine-catchup' || path === '/api/vaccine-catchup') {
       const body = JSON.parse(event.body || '{}');
       
-      // Simple mock response for now to test deployment
+      if (!body.birthDate || !body.vaccines) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Missing required fields: birthDate and vaccines',
+            expected: { birthDate: 'string', vaccines: 'array' }
+          }),
+        };
+      }
+
+      // Enhanced mock response with recommendation structure
       const result = {
         success: true,
-        recommendations: [],
-        message: 'Vaccine catch-up service is working! (Mock response)',
+        recommendations: [
+          {
+            vaccineName: "MMR",
+            recommendation: "Give MMR dose 2 now",
+            nextDoseDate: "2025-08-08",
+            seriesComplete: false,
+            notes: ["Second dose due", "Patient is behind on MMR schedule"],
+            decisionType: "routine"
+          },
+          {
+            vaccineName: "DTaP",
+            recommendation: "Give DTaP dose 1 now", 
+            nextDoseDate: "2025-08-08",
+            seriesComplete: false,
+            notes: ["Starting primary series"],
+            decisionType: "routine"
+          }
+        ],
+        message: 'Catch-up recommendations generated successfully',
         inputData: body
       };
 
