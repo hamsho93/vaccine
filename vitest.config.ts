@@ -1,10 +1,8 @@
 import { defineConfig } from 'vitest/config';
-import viteConfig from './vite.config';
 
 export default defineConfig({
-  ...viteConfig,
   test: {
-    include: ['../tests/**/*.test.ts'],
+    include: ['tests/**/*.test.ts'],
     environment: 'jsdom',
     globals: true,
     coverage: {
@@ -15,8 +13,8 @@ export default defineConfig({
       branches: 0.6,
       statements: 0.6,
       all: true,
-      include: ['client/src/**/*', 'packages/my-shared-backend/server/**/*', 'shared/**/*'],
+      include: ['client/src/**/*', 'packages/my-shared-backend/server/**/*', 'shared/**/*', 'tests/**/*'],
       exclude: ['**/*.d.ts', 'node_modules/**', 'dist/**']
     }
   },
-}); 
+});
