@@ -11,7 +11,10 @@ export const handler = async (
   };
 
   // Handle CORS preflight
-  if (event.httpMethod === 'OPTIONS') {
+  const httpMethod = event.requestContext?.http?.method || event.httpMethod;
+  const path = event.rawPath || event.path;
+  
+  if (httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
       headers,
@@ -23,7 +26,7 @@ export const handler = async (
 
   try {
     // Route based on path
-    if (event.path === '/parse-vaccine-history' || event.path === '/api/parse-vaccine-history') {
+    if (path === '/parse-vaccine-history' || path === '/api/parse-vaccine-history') {
       const body = JSON.parse(event.body || '{}');
       const { vaccineData, birthDate } = body;
 
@@ -42,7 +45,7 @@ export const handler = async (
       };
     }
     
-    if (event.path === '/vaccine-catchup' || event.path === '/api/vaccine-catchup') {
+    if (path === '/vaccine-catchup' || path === '/api/vaccine-catchup') {
       const body = JSON.parse(event.body || '{}');
       
       // Simple mock response for now to test deployment
@@ -61,7 +64,7 @@ export const handler = async (
     }
 
     // Health check endpoint
-    if (event.path === '/health' || event.path === '/api/health') {
+    if (path === '/health' || path === '/api/health') {
       return {
         statusCode: 200,
         headers,
@@ -80,7 +83,7 @@ export const handler = async (
       headers,
       body: JSON.stringify({ 
         message: 'Not found',
-        path: event.path,
+        path: path,
         availableEndpoints: ['/api/parse-vaccine-history', '/api/vaccine-catchup', '/api/health']
       }),
     };
