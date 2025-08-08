@@ -44,26 +44,62 @@ export const handler = async (
         };
       }
 
-      // Enhanced mock response with structured data
+      // Enhanced mock response matching VaccineHistoryResult schema
       const result = {
-        success: true,
+        patientInfo: {
+          dateOfBirth: birthDate || "2010-09-21",
+          currentAge: birthDate ? `${new Date().getFullYear() - new Date(birthDate).getFullYear()} years` : "14 years",
+          totalVaccines: 3
+        },
         vaccines: [
           {
             vaccineName: "MMR",
             standardName: "Measles, Mumps, Rubella",
+            abbreviation: "MMR",
             doses: [
               {
                 date: "2020-01-15",
                 patientAge: "12 months"
               }
             ],
-            seriesComplete: false,
-            nextDoseDate: "2021-01-15",
-            notes: ["Second dose recommended at 4-6 years"]
+            seriesStatus: "Incomplete"
+          },
+          {
+            vaccineName: "DTaP",
+            standardName: "Diphtheria, Tetanus, Pertussis",
+            abbreviation: "DTaP",
+            doses: [
+              {
+                date: "2011-01-19",
+                patientAge: "4 months"
+              }
+            ],
+            seriesStatus: "Incomplete"
+          },
+          {
+            vaccineName: "Hepatitis B",
+            standardName: "Hepatitis B",
+            abbreviation: "Hep B",
+            doses: [
+              {
+                date: "2010-09-21",
+                patientAge: "0 days"
+              },
+              {
+                date: "2011-04-07",
+                patientAge: "6 months"
+              }
+            ],
+            seriesStatus: "Incomplete"
           }
         ],
-        message: 'Vaccine parsing completed successfully',
-        inputData: { vaccineData, birthDate }
+        processingNotes: [
+          "Parsed 3 vaccine series from input data",
+          "Patient date of birth: " + (birthDate || "2010-09-21"),
+          "Mock response - real parsing would extract more details"
+        ],
+        cdcVersion: "2025.1",
+        processedAt: new Date().toISOString()
       };
 
       return {
@@ -87,29 +123,55 @@ export const handler = async (
         };
       }
 
-      // Enhanced mock response with recommendation structure
+      // Enhanced mock response matching CatchUpResult schema
+      const birthYear = new Date(body.birthDate).getFullYear();
+      const currentAge = new Date().getFullYear() - birthYear;
+      
       const result = {
-        success: true,
+        patientAge: `${currentAge} years`,
         recommendations: [
           {
             vaccineName: "MMR",
             recommendation: "Give MMR dose 2 now",
-            nextDoseDate: "2025-08-08",
+            nextDoseDate: "2025-08-15",
             seriesComplete: false,
             notes: ["Second dose due", "Patient is behind on MMR schedule"],
             decisionType: "routine"
           },
           {
             vaccineName: "DTaP",
-            recommendation: "Give DTaP dose 1 now", 
-            nextDoseDate: "2025-08-08",
+            recommendation: "Give DTaP dose 4 now", 
+            nextDoseDate: "2025-08-15",
             seriesComplete: false,
-            notes: ["Starting primary series"],
+            notes: ["Fourth dose due for catch-up", "Ensure minimum interval from previous dose"],
+            decisionType: "catch-up"
+          },
+          {
+            vaccineName: "Hepatitis B",
+            recommendation: "Give Hepatitis B dose 3 now",
+            nextDoseDate: "2025-08-15",
+            seriesComplete: false,
+            notes: ["Final dose to complete series", "Can be given with other vaccines"],
             decisionType: "routine"
+          },
+          {
+            vaccineName: "Varicella",
+            recommendation: "Give Varicella dose 1 now",
+            nextDoseDate: "2025-08-15",
+            seriesComplete: false,
+            notes: ["Starting varicella series", "Second dose due in 4-8 weeks"],
+            decisionType: "routine"
+          },
+          {
+            vaccineName: "COVID-19",
+            recommendation: "Discuss COVID-19 vaccination",
+            seriesComplete: false,
+            notes: ["Vaccination recommended based on current guidelines", "Discuss risks and benefits with patient/family"],
+            decisionType: "shared-clinical-decision"
           }
         ],
-        message: 'Catch-up recommendations generated successfully',
-        inputData: body
+        cdcVersion: "2025.1",
+        processedAt: new Date().toISOString()
       };
 
       return {
