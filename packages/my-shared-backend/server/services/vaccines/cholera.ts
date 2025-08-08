@@ -1,5 +1,5 @@
-import { VaccineDoseInfo, VaccineRecommendation, getAgeInYears } from '../vaccine-catchup.ts';
-import { SpecialConditions } from '../vaccine-cdc-rules';
+import { VaccineDoseInfo, getAgeInYears } from '../vaccine-catchup';
+import type { VaccineRecommendation } from '@shared/schema';
 
 export function choleraRecommendation(
   normalizedName: string,
@@ -7,10 +7,8 @@ export function choleraRecommendation(
   currentDate: Date,
   validDoses: VaccineDoseInfo[],
   numDoses: number,
-  sortedDoses: VaccineDoseInfo[],
-  specialConditions: SpecialConditions,
-  immunityEvidence: any
-): VaccineRecommendation {
+  sortedDoses: VaccineDoseInfo[]
+): VaccineRecommendation | null {
   let seriesComplete = false;
   let recommendation = '';
   let nextDoseDate: string | undefined = undefined;

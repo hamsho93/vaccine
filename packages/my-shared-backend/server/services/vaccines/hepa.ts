@@ -1,4 +1,5 @@
-import { addDays, formatDate, getAgeInDays, VaccineRecommendation, VaccineDoseInfo } from '../vaccine-catchup.ts';
+import { addDays, formatDate, getAgeInDays, VaccineDoseInfo } from '../vaccine-catchup';
+import type { VaccineRecommendation } from '@shared/schema';
 import { SpecialConditions } from '../vaccine-cdc-rules';
 
 export function hepaRecommendation(

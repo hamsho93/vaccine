@@ -1,4 +1,5 @@
-import { VaccineDoseInfo, addDays, getAgeInDays, getAgeInMonths, getAgeInYears, formatDate, VaccineRecommendation } from '../vaccine-catchup.ts';
+import { VaccineDoseInfo, addDays, getAgeInDays, getAgeInMonths, getAgeInYears, formatDate } from '../vaccine-catchup';
+import type { VaccineRecommendation } from '@shared/schema';
 import { SpecialConditions } from '../vaccine-cdc-rules';
 import { vaccineNameMapper } from '../vaccine-name-mapper';
 

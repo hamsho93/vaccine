@@ -1,6 +1,5 @@
-import { VaccineDoseInfo, addDays, formatDate, getAgeInDays } from '../vaccine-catchup.ts';
-import { SpecialConditions } from '../vaccine-cdc-rules';
-import { VaccineRecommendation } from '../vaccine-catchup.ts';
+import { VaccineDoseInfo, addDays, formatDate, getAgeInDays } from '../vaccine-catchup';
+import type { VaccineRecommendation } from '@shared/schema';
 
 export function ipvRecommendation(
   normalizedName: string, 
@@ -8,9 +7,7 @@ export function ipvRecommendation(
   currentDate: Date, 
   validDoses: VaccineDoseInfo[], 
   numDoses: number, 
-  sortedDoses: VaccineDoseInfo[], 
-  specialConditions: SpecialConditions, 
-  immunityEvidence: any
+  sortedDoses: VaccineDoseInfo[]
 ): VaccineRecommendation {
   let seriesComplete = false;
   let recommendation = '';

@@ -1,5 +1,5 @@
-import { VaccineDoseInfo, addDays, formatDate, getAgeInMonths } from '../vaccine-catchup.ts';
-import { VaccineRecommendation } from '../../../shared/schema.ts';
+import { VaccineDoseInfo, addDays, formatDate, getAgeInMonths } from '../vaccine-catchup';
+import type { VaccineRecommendation } from '@shared/schema';
 import { SpecialConditions } from '../vaccine-cdc-rules';
 
 export function hepatitisBRecommendation(

@@ -1,4 +1,5 @@
-import { VaccineDoseInfo, addDays, formatDate, getAgeInYears, VaccineRecommendation } from '../vaccine-catchup.ts';
+import { VaccineDoseInfo, addDays, formatDate, getAgeInYears } from '../vaccine-catchup';
+import type { VaccineRecommendation } from '@shared/schema';
 import { SpecialConditions } from '../vaccine-cdc-rules';
 
 export function hpvRecommendation(
