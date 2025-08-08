@@ -1,4 +1,6 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { VaccineParserService } from '../../server/services/vaccine-parser';
+import { VaccineCatchUpService } from '../../server/services/vaccine-catchup';
 
 // Support both API Gateway v1 (REST) and v2 (HTTP) event formats
 type APIEvent = APIGatewayProxyEvent | any;
@@ -44,63 +46,13 @@ export const handler = async (
         };
       }
 
-      // Enhanced mock response matching VaccineHistoryResult schema
-      const result = {
-        patientInfo: {
-          dateOfBirth: birthDate || "2010-09-21",
-          currentAge: birthDate ? `${new Date().getFullYear() - new Date(birthDate).getFullYear()} years` : "14 years",
-          totalVaccines: 3
-        },
-        vaccines: [
-          {
-            vaccineName: "MMR",
-            standardName: "Measles, Mumps, Rubella",
-            abbreviation: "MMR",
-            doses: [
-              {
-                date: "2020-01-15",
-                patientAge: "12 months"
-              }
-            ],
-            seriesStatus: "Incomplete"
-          },
-          {
-            vaccineName: "DTaP",
-            standardName: "Diphtheria, Tetanus, Pertussis",
-            abbreviation: "DTaP",
-            doses: [
-              {
-                date: "2011-01-19",
-                patientAge: "4 months"
-              }
-            ],
-            seriesStatus: "Incomplete"
-          },
-          {
-            vaccineName: "Hepatitis B",
-            standardName: "Hepatitis B",
-            abbreviation: "Hep B",
-            doses: [
-              {
-                date: "2010-09-21",
-                patientAge: "0 days"
-              },
-              {
-                date: "2011-04-07",
-                patientAge: "6 months"
-              }
-            ],
-            seriesStatus: "Incomplete"
-          }
-        ],
-        processingNotes: [
-          "Parsed 3 vaccine series from input data",
-          "Patient date of birth: " + (birthDate || "2010-09-21"),
-          "Mock response - real parsing would extract more details"
-        ],
-        cdcVersion: "2025.1",
-        processedAt: new Date().toISOString()
-      };
+      // Use real vaccine parser service
+      console.log('Using real vaccine parser for:', { vaccineData: vaccineData.substring(0, 100) + '...', birthDate });
+      
+      const parserService = new VaccineParserService();
+      const result = await parserService.parseVaccineHistory(vaccineData, birthDate);
+      
+      console.log('Parser result:', JSON.stringify(result, null, 2));
 
       return {
         statusCode: 200,
@@ -123,56 +75,16 @@ export const handler = async (
         };
       }
 
-      // Enhanced mock response matching CatchUpResult schema
-      const birthYear = new Date(body.birthDate).getFullYear();
-      const currentAge = new Date().getFullYear() - birthYear;
+      // Use real catch-up service
+      console.log('Using real catch-up service for:', { 
+        birthDate: body.birthDate, 
+        vaccineHistoryCount: body.vaccineHistory?.length 
+      });
       
-      const result = {
-        patientAge: `${currentAge} years`,
-        recommendations: [
-          {
-            vaccineName: "MMR",
-            recommendation: "Give MMR dose 2 now",
-            nextDoseDate: "2025-08-15",
-            seriesComplete: false,
-            notes: ["Second dose due", "Patient is behind on MMR schedule"],
-            decisionType: "routine"
-          },
-          {
-            vaccineName: "DTaP",
-            recommendation: "Give DTaP dose 4 now", 
-            nextDoseDate: "2025-08-15",
-            seriesComplete: false,
-            notes: ["Fourth dose due for catch-up", "Ensure minimum interval from previous dose"],
-            decisionType: "catch-up"
-          },
-          {
-            vaccineName: "Hepatitis B",
-            recommendation: "Give Hepatitis B dose 3 now",
-            nextDoseDate: "2025-08-15",
-            seriesComplete: false,
-            notes: ["Final dose to complete series", "Can be given with other vaccines"],
-            decisionType: "routine"
-          },
-          {
-            vaccineName: "Varicella",
-            recommendation: "Give Varicella dose 1 now",
-            nextDoseDate: "2025-08-15",
-            seriesComplete: false,
-            notes: ["Starting varicella series", "Second dose due in 4-8 weeks"],
-            decisionType: "routine"
-          },
-          {
-            vaccineName: "COVID-19",
-            recommendation: "Discuss COVID-19 vaccination",
-            seriesComplete: false,
-            notes: ["Vaccination recommended based on current guidelines", "Discuss risks and benefits with patient/family"],
-            decisionType: "shared-clinical-decision"
-          }
-        ],
-        cdcVersion: "2025.1",
-        processedAt: new Date().toISOString()
-      };
+      const catchUpService = new VaccineCatchUpService();
+      const result = await catchUpService.generateCatchUpRecommendations(body);
+      
+      console.log('Catch-up result:', JSON.stringify(result, null, 2));
 
       return {
         statusCode: 200,
