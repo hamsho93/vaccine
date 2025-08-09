@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { amplifyVaccineService } from "@/lib/amplify-client";
 import { ParseVaccineHistoryRequest, VaccineHistoryResult, CatchUpRequest, CatchUpResult } from "@shared/schema";
-import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Copy, Link as LinkIcon } from "lucide-react";
+import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Link as LinkIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 
@@ -25,10 +25,10 @@ export default function VaccineParser() {
     const map: Record<string, string> = {
       meningococcal_acwy: '#note-mening',
       meningococcal_b: '#note-mening',
-      dtap_tdap: '#note-tdap',
+      dtap_tdap: '#note-dtap',
       pneumococcal: '#note-pneumo',
       mmr: '#note-mmr',
-      varicella: '#note-var',
+      varicella: '#note-varicella',
       hepatitis_b: '#note-hepb',
       hepa: '#note-hepa',
       ipv: '#note-polio',
@@ -39,47 +39,6 @@ export default function VaccineParser() {
     };
     const anchor = map[vaccineCode] || '';
     return anchor ? `${base}${anchor}` : base;
-  };
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast({ title: 'Copied', description: 'Recommendation copied to clipboard' });
-    } catch (e) {
-      toast({ title: 'Copy failed', description: 'Unable to copy to clipboard', variant: 'destructive' });
-    }
-  };
-
-  const downloadIcs = (title: string, dateStr: string) => {
-    // Expect dateStr as YYYY-MM-DD
-    const dt = new Date(`${dateStr}T09:00:00`);
-    if (Number.isNaN(dt.getTime())) return;
-    const end = new Date(dt.getTime() + 30 * 60 * 1000);
-    const toICS = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    const ics = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//VaxRecord//Schedule//EN',
-      'BEGIN:VEVENT',
-      `UID:${crypto.randomUUID()}@vaxrecord`,
-      `DTSTAMP:${toICS(new Date())}`,
-      `DTSTART:${toICS(dt)}`,
-      `DTEND:${toICS(end)}`,
-      `SUMMARY:${title}`,
-      'DESCRIPTION:Vaccine dose due per CDC schedule',
-      'END:VEVENT',
-      'END:VCALENDAR'
-    ].join('\r\n');
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${title.replace(/\s+/g, '-')}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast({ title: 'Calendar event downloaded', description: 'Add it to your calendar to set a reminder.' });
   };
 
   const [result, setResult] = useState<VaccineHistoryResult | null>(null);
@@ -241,16 +200,8 @@ export default function VaccineParser() {
             </div>
           )}
 
-          {/* Actions */}
+          {/* Reference */}
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" onClick={() => copyToClipboard(`${rec.vaccineName}: ${rec.recommendation}${rec.nextDoseDate ? ` (Next: ${rec.nextDoseDate})` : ''}`)}>
-              <Copy className="h-3.5 w-3.5 mr-1" /> Copy
-            </Button>
-            {rec.nextDoseDate && (
-              <Button variant="secondary" size="sm" onClick={() => downloadIcs(`${rec.vaccineName} dose due`, rec.nextDoseDate)}>
-                <Calendar className="h-3.5 w-3.5 mr-1" /> Add to Calendar
-              </Button>
-            )}
             <a href={cdcLink} target="_blank" rel="noreferrer">
               <Button variant="outline" size="sm">
                 <LinkIcon className="h-3.5 w-3.5 mr-1" /> CDC Reference
