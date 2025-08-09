@@ -13,3 +13,11 @@ vite.config.ts.*
 # Ignore compiled JS alongside TS sources in backend server
 packages/my-shared-backend/server/**/*.js
 packages/my-shared-backend/server/**/*.js.map
+
+# Ignore build and coverage artifacts
+coverage/
+client/coverage/
+dist/
+.amplify/
+amplify/
+**/*.log

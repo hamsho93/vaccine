@@ -9,9 +9,9 @@ export const handler = async (
   event: APIEvent
 ): Promise<APIGatewayProxyResult> => {
   // Tighten CORS: allow only the deployed Amplify frontend domain
-  const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://d2ahzdteujgz7m.amplifyapp.com';
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
   const requestOrigin = event.headers?.origin || event.headers?.Origin;
-  const corsOrigin = requestOrigin && requestOrigin === allowedOrigin ? allowedOrigin : allowedOrigin;
+  const corsOrigin = allowedOrigin === '*' ? '*' : (requestOrigin && requestOrigin === allowedOrigin ? allowedOrigin : allowedOrigin);
 
   const headers = {
     'Content-Type': 'application/json',
