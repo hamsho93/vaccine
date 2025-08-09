@@ -746,126 +746,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
           </Card>
         )}
 
-        {/* Special Conditions Section */}
-        {result && !catchUpResult && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Info className="text-purple-600 mr-2" />
-                Special Medical Conditions
-              </CardTitle>
-              <p className="text-sm text-slate-600">
-                Select any special conditions that apply to this patient. These affect vaccine recommendations.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="immunocompromised"
-                    checked={specialConditions.immunocompromised}
-                    onCheckedChange={(checked) => 
-                      setSpecialConditions(prev => ({ ...prev, immunocompromised: checked as boolean }))
-                    }
-                  />
-                  <label
-                    htmlFor="immunocompromised"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Immunocompromised
-                  </label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="pregnancy"
-                    checked={specialConditions.pregnancy}
-                    onCheckedChange={(checked) => 
-                      setSpecialConditions(prev => ({ ...prev, pregnancy: checked as boolean }))
-                    }
-                  />
-                  <label
-                    htmlFor="pregnancy"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Pregnant
-                  </label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="hivInfection"
-                    checked={specialConditions.hivInfection}
-                    onCheckedChange={(checked) => 
-                      setSpecialConditions(prev => ({ ...prev, hivInfection: checked as boolean }))
-                    }
-                  />
-                  <label
-                    htmlFor="hivInfection"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    HIV Infection
-                  </label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="asplenia"
-                    checked={specialConditions.asplenia}
-                    onCheckedChange={(checked) => 
-                      setSpecialConditions(prev => ({ ...prev, asplenia: checked as boolean }))
-                    }
-                  />
-                  <label
-                    htmlFor="asplenia"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Asplenia (No spleen)
-                  </label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="cochlearImplant"
-                    checked={specialConditions.cochlearImplant}
-                    onCheckedChange={(checked) => 
-                      setSpecialConditions(prev => ({ ...prev, cochlearImplant: checked as boolean }))
-                    }
-                  />
-                  <label
-                    htmlFor="cochlearImplant"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Cochlear Implant
-                  </label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="csfLeak"
-                    checked={specialConditions.csfLeak}
-                    onCheckedChange={(checked) => 
-                      setSpecialConditions(prev => ({ ...prev, csfLeak: checked as boolean }))
-                    }
-                  />
-                  <label
-                    htmlFor="csfLeak"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    CSF Leak
-                  </label>
-                </div>
-              </div>
-              
-              <Alert className="mt-4 bg-purple-50 border-purple-200">
-                <AlertCircle className="h-4 w-4 text-purple-600" />
-                <AlertDescription className="text-purple-800">
-                  Special conditions may change vaccine recommendations, intervals, or indicate additional vaccines needed.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        )}
+        {/* Special Conditions Section removed per request */}
 
         {/* Enhanced Catch-Up Recommendations Section */}
         {catchUpResult && (() => {
@@ -875,7 +756,6 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
           const getDefaultTab = () => {
             if (categories.actionNeeded.length > 0) return 'actionNeeded';
             if (categories.sharedDecision.length > 0) return 'sharedDecision';
-            if (categories.riskBased.length > 0) return 'riskBased';
             if (categories.international.length > 0) return 'international';
             if (categories.complete.length > 0) return 'complete';
             return 'notRecommended';
@@ -907,7 +787,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                     </div>
                     <Separator orientation="vertical" className="h-4" />
                     <div className="text-sm text-gray-600">
-                      <span className="font-medium">Action needed:</span> {categories.actionNeeded.length + categories.sharedDecision.length + categories.riskBased.length}
+                      <span className="font-medium">Action needed:</span> {categories.actionNeeded.length + categories.sharedDecision.length}
                     </div>
                   </div>
                   
@@ -924,7 +804,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                 </div>
 
                 <Tabs defaultValue={getDefaultTab()} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 mb-6">
+                  <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 mb-6">
                     <TabsTrigger value="actionNeeded" className="flex items-center space-x-1 text-xs sm:text-sm">
                       <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">Action Needed</span>
@@ -943,12 +823,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                       <span className="sm:hidden">🤝</span>
                       <span>({categories.sharedDecision.length})</span>
                     </TabsTrigger>
-                    <TabsTrigger value="riskBased" className="flex items-center space-x-1 text-xs sm:text-sm">
-                      <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Risk-Based</span>
-                      <span className="sm:hidden">⚠️</span>
-                      <span>({categories.riskBased.length})</span>
-                    </TabsTrigger>
+                    {/* Risk-Based tab removed per request */}
                     <TabsTrigger value="international" className="flex items-center space-x-1 text-xs sm:text-sm">
                       <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">International</span>
@@ -1008,20 +883,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                     )}
                   </TabsContent>
 
-                  <TabsContent value="riskBased" className="space-y-4">
-                    {categories.riskBased.length > 0 ? (
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                        {categories.riskBased.map((rec, index) => (
-                          <VaccineCard key={index} rec={rec} category="riskBased" />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <AlertCircle className="w-12 h-12 mx-auto mb-3 text-purple-500" />
-                        <p>No risk-based vaccines to consider.</p>
-                      </div>
-                    )}
-                  </TabsContent>
+                  {/* Risk-Based content removed per request */}
 
                   <TabsContent value="international" className="space-y-4">
                     {categories.international.length > 0 ? (
