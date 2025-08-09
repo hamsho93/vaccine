@@ -10,3 +10,6 @@ vite.config.ts.*
 .env.development
 .replit
 .local
+# Ignore compiled JS alongside TS sources in backend server
+packages/my-shared-backend/server/**/*.js
+packages/my-shared-backend/server/**/*.js.map
