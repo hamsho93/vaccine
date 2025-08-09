@@ -15,7 +15,9 @@ jobs:
       - name: Enforce minimum approvals
         uses: actions/github-script@v7
         env:
-          REVIEWERS_REQUIRED: "1"
+          REVIEWERS_REQUIRED: "0" # 0 for solo maintainer; set to 1+ if collaborators join
+          ALLOW_SELF_MERGE: "true" # allow author to self-merge when acting alone
+          BYPASS_LABELS: "self-approve,solo,no-review" # any of these labels bypasses the check
         with:
           script: |
             const pr = context.payload.pull_request
@@ -23,20 +25,40 @@ jobs:
             const repo = context.repo.repo
             const prNumber = pr.number
 
-            const { data: reviews } = await github.rest.pulls.listReviews({ owner, repo, pull_number: prNumber })
+            // Optional bypass by label
+            const bypassLabels = String(process.env.BYPASS_LABELS || '').split(',').map(s => s.trim()).filter(Boolean)
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({ owner, repo, issue_number: prNumber })
+            if (labels.some(l => bypassLabels.includes(l.name))) {
+              core.info(`Bypassing review requirement due to label. Labels: ${labels.map(l => l.name).join(', ')}`)
+              return
+            }
 
-            // Count unique approvers, excluding the author
+            const required = parseInt(process.env.REVIEWERS_REQUIRED || '0', 10)
+            const allowSelfMerge = String(process.env.ALLOW_SELF_MERGE || 'false').toLowerCase() === 'true'
+
             const author = pr.user.login
+
+            // Optional bypass for self-merge when solo
+            if (allowSelfMerge && context.actor === author) {
+              core.info(`Bypassing review requirement for author ${author} (self-merge allowed).`)
+              return
+            }
+
+            // If required is zero, no approvals needed
+            if (required === 0) {
+              core.info('Bypassing review requirement (REVIEWERS_REQUIRED=0).')
+              return
+            }
+
+            // Otherwise enforce minimum approvals from non-author reviewers
+            const { data: reviews } = await github.rest.pulls.listReviews({ owner, repo, pull_number: prNumber })
             const approvers = new Set()
             for (const r of reviews) {
               if (r.state === 'APPROVED' && r.user?.login && r.user.login !== author) {
                 approvers.add(r.user.login)
               }
             }
-
-            const required = parseInt(process.env.REVIEWERS_REQUIRED || '1', 10)
             const have = approvers.size
-
             core.info(`Approvals (excluding author ${author}): ${have}. Required: ${required}`)
             if (have < required) {
               core.setFailed(`Need at least ${required} approval(s) from a reviewer other than the author. Got ${have}.`)
