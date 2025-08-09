@@ -137,12 +137,42 @@ export default function VaccineParser() {
     return { current: 0, total: 1, percentage: 0 };
   };
 
+  // Display formatting for internal vaccine codes
+  const formatVaccineName = (internalCode: string, ageYears?: number): string => {
+    const map: Record<string, string> = {
+      meningococcal_acwy: 'MenACWY',
+      meningococcal_b: 'MenB',
+      pneumococcal: 'Pneumococcal (PCV)',
+      mmr: 'MMR',
+      varicella: 'Varicella',
+      hepatitis_b: 'Hepatitis B',
+      hepatitis_a: 'Hepatitis A',
+      hpv: 'HPV',
+      influenza: 'Influenza',
+      ipv: 'Polio (IPV)',
+      hib: 'Hib',
+      rsv: 'RSV',
+      rotavirus: 'Rotavirus',
+      cholera: 'Cholera',
+      typhoid: 'Typhoid',
+      japanese_encephalitis: 'Japanese Encephalitis',
+      yellow_fever: 'Yellow Fever',
+      covid19: 'COVID-19',
+    };
+    if (internalCode === 'dtap_tdap') {
+      // Age-specific: DTaP for <7y, Tdap for ≥7y
+      return (ageYears ?? 7) >= 7 ? 'Tdap' : 'DTaP';
+    }
+    return map[internalCode] || internalCode;
+  };
+
   // Enhanced vaccine card component
   const VaccineCard = ({ rec, category }: { rec: any, category: string }) => {
     const progress = getSeriesProgress(rec);
     const Icon = getPriorityIcon(category);
     const priorityColor = getPriorityColor(category);
     const cdcLink = getCdcLink(rec.vaccineName);
+    const displayName = formatVaccineName(rec.vaccineName, catchUpResult?.patientAge ? parseInt(String(catchUpResult.patientAge)) : undefined);
 
     return (
       <Card className={`relative overflow-hidden border-l-4 ${priorityColor} transition-all duration-200 hover:shadow-md`}>
@@ -150,7 +180,7 @@ export default function VaccineParser() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center space-x-3">
               <Icon className="w-5 h-5 text-gray-600 flex-shrink-0" />
-              <h4 className="text-base sm:text-lg font-semibold text-gray-900 leading-tight">{rec.vaccineName}</h4>
+              <h4 className="text-base sm:text-lg font-semibold text-gray-900 leading-tight">{displayName}</h4>
             </div>
             <div className="flex items-center space-x-2 self-start sm:self-center">
               <Badge 
