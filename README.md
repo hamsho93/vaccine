@@ -18,96 +18,70 @@ A comprehensive, CDC-compliant vaccine history parsing and immunization recommen
 - ⚡ **Real-Time:** Instant recommendations with progress tracking
 - 🏥 **Clinical Grade:** Built for healthcare professional workflows
 
-## 🚀 AWS Amplify Deployment
+## 🚀 AWS Amplify Deployment (Monorepo: Frontend + Gen 2 Backend)
 
 ### Prerequisites
 
 1. **AWS Account** with Amplify access
 2. **GitHub Repository** containing this code
-3. **Environment Variables** for production
-4. **Database** (Neon PostgreSQL recommended)
-5. **OpenAI API Key** for vaccine parsing
+3. **Environment Variables** for frontend and backend
+4. **OpenAI API Key** for vaccine parsing (backend)
 
 ### Required Environment Variables
 
-Configure these in **AWS Amplify Console → App Settings → Environment Variables**:
+Configure these in **AWS Amplify Console → App Settings → Environment Variables** for each Amplify app:
+
+Frontend app (appRoot `.`):
 
 ```bash
-# Application Environment
-NODE_ENV=production
-PORT=3000
-
-# Database Configuration (Neon PostgreSQL)
-DATABASE_URL=postgresql://username:password@host:5432/database?sslmode=require
-
-# AI Integration (OpenAI)
-OPENAI_API_KEY=sk-your-openai-api-key-here
-
-# Optional Features
-ENABLE_ANALYTICS=false
+# Frontend
+VITE_API_URL=https://<your-api-gateway-id>.execute-api.<region>.amazonaws.com
 ```
 
-### Step-by-Step Deployment
+Backend app (appRoot `packages/my-shared-backend`):
 
-#### 1. **Prepare Repository**
 ```bash
-# Clone and prepare repository
-git clone your-repository-url
-cd VaxRecord
-
-# Verify deployment readiness
-npm install
-npm run build  # Should complete without errors
-npm test       # Run tests to ensure functionality
+# Backend
+OPENAI_API_KEY=sk-...                # required for parsing
+ALLOWED_ORIGIN=https://<your-amplify-frontend-domain>  # strict CORS
+NODE_OPTIONS=--enable-source-maps     # optional, better error stacks
 ```
 
-#### 2. **Set Up Database**
-1. Create a [Neon PostgreSQL](https://neon.tech) database
-2. Copy the connection string
-3. Test connection: `npm run db:push`
+### One-click Amplify Setup (Monorepo)
 
-#### 3. **AWS Amplify Setup**
-1. **Connect Repository:**
-   - Go to [AWS Amplify Console](https://console.aws.amazon.com/amplify/)
-   - Choose "Host web app"
-   - Connect your GitHub repository
-   - Select the `main` branch
+#### 1) Connect repository once (Monorepo mode)
+- Amplify reads root `amplify.yml` with two applications:
+  - Frontend (appRoot `.`) – static hosting of Vite build
+  - Backend (appRoot `packages/my-shared-backend`) – Amplify Gen 2 API (Lambda + API Gateway)
 
-2. **Build Settings:**
-   - Amplify will auto-detect `amplify.yml`
-   - Build command: `npm run build`
-   - Artifacts: `dist/**/*`
-   - No manual configuration needed
+#### 2) Configure environment variables
+- Frontend app: set `VITE_API_URL`
+- Backend app: set `OPENAI_API_KEY`, `ALLOWED_ORIGIN`
 
-3. **Environment Variables:**
-   - Navigate to App Settings → Environment Variables
-   - Add all required variables listed above
-   - **Critical:** Ensure `DATABASE_URL` is your production database
+#### 3) Deploy
+- Click “Save and deploy” for both apps
+- After backend deploys, verify `/api/health` responds 200
+- Frontend should call the API via `VITE_API_URL`
 
-4. **Deploy:**
-   - Click "Save and Deploy"
-   - Monitor build logs (~5-10 minutes)
-   - Access your deployed app via the Amplify URL
+#### 4) Update releases
+- Push to `main` → CI runs (type-check, lint, build, tests)
+- Amplify auto-builds both apps per `amplify.yml`
 
 ### Architecture Overview
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   React Client  │───▶│  Express API    │───▶│  Neon Database  │
-│  (Vite + TS)    │    │  (Node.js)      │    │  (PostgreSQL)   │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       
-         ▼                       ▼                       
-┌─────────────────┐    ┌─────────────────┐               
-│  shadcn/ui      │    │   OpenAI API    │               
-│  Tailwind CSS   │    │   (GPT-4o)      │               
-└─────────────────┘    └─────────────────┘               
+┌─────────────────┐        ┌──────────────────────────────┐
+│   React Client  │  HTTPS │  API Gateway (HTTP API v2)   │
+│  (Vite + TS)    │ ─────▶ │  → Lambda (Gen 2 handler)    │
+└─────────────────┘        └──────────────────────────────┘
+         │                                  │
+         ▼                                  ▼
+  shadcn/ui + Tailwind                 OpenAI (parsing)
 ```
 
 **Tech Stack:**
 - **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
-- **Backend:** Node.js + Express + TypeScript
-- **Database:** Neon PostgreSQL (serverless)
+- **Backend:** Amplify Gen 2 (Lambda + API Gateway, TypeScript)
 - **AI:** OpenAI GPT-4o for vaccine parsing
 - **Validation:** Zod schemas for type safety
 - **Testing:** Vitest + jsdom
@@ -191,11 +165,9 @@ VaxRecord/
 │   │   ├── components/     # shadcn/ui components
 │   │   ├── pages/          # Application pages
 │   │   └── lib/            # Utilities, queries
-├── server/                 # Express backend
-│   ├── services/           # Business logic
-│   │   └── vaccines/       # Individual vaccine modules
-│   ├── routes.ts           # API endpoints
-│   └── index.ts            # Server entry point
+├── packages/my-shared-backend/   # Amplify Gen 2 backend (API, functions)
+│   ├── amplify/                  # Gen 2 infra (api, auth, data, functions)
+│   └── server/                   # Business logic and shared services
 ├── shared/                 # Shared types/schemas
 │   └── schema.ts           # Zod validation schemas
 ├── tests/                  # Test files
@@ -207,42 +179,23 @@ VaxRecord/
 
 ### Core Endpoints
 
-#### Parse Vaccine History
-```http
-POST /api/vaccine-history/parse
-Content-Type: application/json
+Base URL: `${VITE_API_URL}`
 
+1) Parse vaccine history
+```
+POST /api/parse-vaccine-history
 {
-  "vaccineHistory": "string",
-  "birthDate": "YYYY-MM-DD",
-  "specialConditions": {
-    "immunocompromised": boolean,
-    "asplenia": boolean
-  }
+  "vaccineData": "string",
+  "birthDate": "YYYY-MM-DD"
 }
 ```
 
-**Response:**
-```json
+2) Generate catch-up
+```
+POST /api/vaccine-catchup
 {
-  "parsedVaccines": [
-    {
-      "vaccine": "string",
-      "date": "YYYY-MM-DD",
-      "product": "string",
-      "dose": number
-    }
-  ],
-  "recommendations": [
-    {
-      "vaccineName": "string",
-      "recommendation": "string",
-      "nextDoseDate": "YYYY-MM-DD",
-      "seriesComplete": boolean,
-      "notes": ["string"],
-      "decisionType": "routine|catch-up|shared-clinical-decision|risk-based|not-recommended|international-advisory|aged-out"
-    }
-  ]
+  "birthDate": "YYYY-MM-DD",
+  "vaccineHistory": { /* parsed result from step 1 */ }
 }
 ```
 
