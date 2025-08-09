@@ -30,15 +30,21 @@ export default function VaccineParser() {
       mmr: '#note-mmr',
       varicella: '#note-varicella',
       hepatitis_b: '#note-hepb',
-      hepa: '#note-hepa',
+      hepatitis_a: '#note-hepa',
       ipv: '#note-polio',
       hpv: '#note-hpv',
       influenza: '#note-flu',
-      rsv: '#note-rsv',
+      rotavirus: '#note-rotavirus',
+      rsv: '',
       covid19: '#note-covid-19'
     };
     const anchor = map[vaccineCode] || '';
-    return anchor ? `${base}${anchor}` : base;
+    if (anchor) return `${base}${anchor}`;
+    // RSV references a separate clinical guidance page for infants/young children
+    if (vaccineCode === 'rsv') {
+      return 'https://www.cdc.gov/rsv/hcp/vaccine-clinical-guidance/infants-young-children.html';
+    }
+    return base;
   };
 
   const [result, setResult] = useState<VaccineHistoryResult | null>(null);
