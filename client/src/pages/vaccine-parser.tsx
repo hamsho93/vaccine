@@ -144,14 +144,6 @@ export default function VaccineParser() {
     const priorityColor = getPriorityColor(category);
     const cdcLink = getCdcLink(rec.vaccineName);
 
-    const isGiveNow = /\bgive\b.*\bnow\b/i.test(rec.recommendation || '');
-    const scheduleMatch = (rec.recommendation || '').match(/on or after\s+(\d{4}-\d{2}-\d{2})/i);
-    const headline = isGiveNow
-      ? 'Action: Administer now'
-      : scheduleMatch
-        ? `Schedule on or after ${scheduleMatch[1]}`
-        : rec.seriesComplete ? 'No action: Series complete' : 'Action: See details';
-
     return (
       <Card className={`relative overflow-hidden border-l-4 ${priorityColor} transition-all duration-200 hover:shadow-md`}>
         <CardHeader className="pb-3">
@@ -176,10 +168,7 @@ export default function VaccineParser() {
             </div>
           </div>
 
-          {/* Clear headline action */}
-          <div className={`mt-3 text-sm rounded-md px-3 py-2 ${isGiveNow ? 'bg-red-50 text-red-700' : scheduleMatch ? 'bg-amber-50 text-amber-700' : rec.seriesComplete ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-700'}`}>
-            <span className="font-medium">{headline}</span>
-          </div>
+          {/* Headline removed per request */}
           
           {/* Progress bar for multi-dose series */}
           {progress.total > 1 && (
