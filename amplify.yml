@@ -11,7 +11,7 @@ applications:
             - node --version
             - npm --version
             - echo "Installing dependencies from root..."
-            - npm ci
+            - npm ci --legacy-peer-deps
         build:
           commands:
             - echo "Building frontend for static hosting..."
