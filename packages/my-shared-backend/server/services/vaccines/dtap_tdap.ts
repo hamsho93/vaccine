@@ -33,10 +33,15 @@ export function dtapTdapRecommendation(
       notes.push('Tdap preferred for first dose in catch-up series (age 7-18 years)');
       notes.push('If additional doses needed, use Td or Tdap');
       notes.push(`${3 - numDoses} more doses needed to complete primary series`);
-      
-      if (currentAgeYears >= 11 && !hasReceivedAdolescentBooster) {
+      // Adolescent booster handling
+      if (currentAgeYears >= 7 && currentAgeYears <= 9) {
+        notes.push('Will still need adolescent Tdap booster at 11-12 years');
+      } else if (currentAgeYears === 10) {
+        notes.push('This dose counts as adolescent Tdap booster (no additional booster needed)');
+      } else if (currentAgeYears >= 11 && !hasReceivedAdolescentBooster) {
         notes.push('This dose counts as adolescent Tdap booster');
       }
+      
     } else if (numDoses >= 3) {
       // Primary series complete - check if adolescent booster needed
       if (currentAgeYears >= 11 && currentAgeYears <= 18 && !hasReceivedAdolescentBooster) {
@@ -67,16 +72,48 @@ export function dtapTdapRecommendation(
       recommendation = 'DTaP series complete';
       seriesComplete = true;
       notes.push('Five-dose DTaP series provides protection through childhood');
-    } else if (numDoses === 4 && currentAgeMonths >= 48) {
-      // 5th dose due at 4-6 years
-      recommendation = 'Give DTaP dose 5 now (final childhood dose)';
-      notes.push('Fifth dose completes childhood DTaP series');
-      notes.push('Due at 4-6 years of age, minimum 6 months after dose 4');
-    } else if (numDoses === 4 && currentAgeMonths < 48) {
-      const nextDate = addDays(birthDate, 48 * 30.44); // 48 months
-      recommendation = `Give DTaP dose 5 on or after ${formatDate(nextDate)}`;
-      nextDoseDate = formatDate(nextDate);
-      notes.push('Fifth dose due at 4-6 years of age');
+    } else if (numDoses === 4) {
+      // CDC exception: Dose 5 is NOT necessary if dose 4 was given at age ≥4 years
+      // AND at least 6 months after dose 3
+      const dose3Date = validDoses[2]?.date;
+      const dose4Date = validDoses[3]?.date;
+      if (dose3Date && dose4Date) {
+        const ageAtDose4Months = getAgeInMonths(birthDate, dose4Date);
+        const daysBetweenDose3and4 = Math.floor((dose4Date.getTime() - dose3Date.getTime()) / (1000 * 60 * 60 * 24));
+        const meetsAgeCriterion = ageAtDose4Months >= 48; // ≥4 years
+        const meetsIntervalCriterion = daysBetweenDose3and4 >= 168; // ≥6 months
+        if (meetsAgeCriterion && meetsIntervalCriterion) {
+          recommendation = 'DTaP series complete (dose 5 not needed)';
+          seriesComplete = true;
+          notes.push('Dose 5 not necessary: dose 4 at ≥4 years AND ≥6 months after dose 3');
+        } else {
+          // Determine earliest due date considering both age 4y and 6 months after dose 4
+          const dateAt48Months = addDays(birthDate, 48 * 30.44);
+          const sixMonthsAfterDose4 = addDays(dose4Date, 168);
+          const nextDue = new Date(Math.max(dateAt48Months.getTime(), sixMonthsAfterDose4.getTime()));
+          if (currentAgeMonths >= 48 && currentDate.getTime() >= nextDue.getTime()) {
+            recommendation = 'Give DTaP dose 5 now (final childhood dose)';
+            notes.push('Fifth dose completes childhood DTaP series');
+            notes.push('Due at 4-6 years of age, minimum 6 months after dose 4');
+          } else {
+            recommendation = `Give DTaP dose 5 on or after ${formatDate(nextDue)}`;
+            nextDoseDate = formatDate(nextDue);
+            notes.push('Fifth dose due at 4-6 years of age and ≥6 months after dose 4');
+          }
+        }
+      } else {
+        // Safety fallback if dates are missing
+        if (currentAgeMonths >= 48) {
+          recommendation = 'Give DTaP dose 5 now (final childhood dose)';
+          notes.push('Fifth dose completes childhood DTaP series');
+          notes.push('Due at 4-6 years of age, minimum 6 months after dose 4');
+        } else {
+          const nextDate = addDays(birthDate, 48 * 30.44); // 48 months
+          recommendation = `Give DTaP dose 5 on or after ${formatDate(nextDate)}`;
+          nextDoseDate = formatDate(nextDate);
+          notes.push('Fifth dose due at 4-6 years of age');
+        }
+      }
     } else {
       const nextDoseNumber = numDoses + 1;
       recommendation = `Give DTaP dose ${nextDoseNumber}`;
