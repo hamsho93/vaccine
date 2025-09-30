@@ -473,20 +473,31 @@ export default function VaccineParser() {
     setFeedbackSubmitting(true);
 
     try {
-      // For now, we'll just log to console
-      // In production, you'd send this to your backend
-      console.log('Feedback submitted:', {
-        email: feedbackEmail,
-        feedback: feedbackText,
-        timestamp: new Date().toISOString(),
-        sessionId: sessionId,
+      // Submit to FormSubmit.co - a free form submission service
+      // Replace 'your-email@example.com' with your actual email
+      const formData = new FormData();
+      formData.append('email', feedbackEmail);
+      formData.append('message', feedbackText);
+      formData.append('timestamp', new Date().toISOString());
+      formData.append('sessionId', sessionId);
+      formData.append('_subject', 'VaxRecord Feedback Submission');
+      formData.append('_template', 'table'); // Use table format for email
+      formData.append('_captcha', 'false'); // Disable captcha for better UX
+      
+      const response = await fetch('https://formsubmit.co/mahmoudhamsho@gmail.com', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
       });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!response.ok) {
+        throw new Error('Submission failed');
+      }
 
       toast({
-        title: "Feedback submitted!",
+        title: "Feedback submitted! 🎉",
         description: "Thank you for helping us improve. We'll review your feedback soon.",
       });
 
@@ -495,9 +506,10 @@ export default function VaccineParser() {
       setFeedbackText("");
       setFeedbackOpen(false);
     } catch (error) {
+      console.error('Feedback submission error:', error);
       toast({
         title: "Submission failed",
-        description: "Please try again later or email us directly.",
+        description: "Please try again later or email us directly at mahmoudhamsho@gmail.com",
         variant: "destructive",
       });
     } finally {
