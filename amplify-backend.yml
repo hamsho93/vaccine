@@ -10,9 +10,9 @@ applications:
             - node --version
             - npm --version
             - echo "Installing backend dependencies..."
-            - npm ci
+            - npm install --no-audit --no-fund --legacy-peer-deps
             - echo "Installing Amplify CLI locally..."
-            - npm install @aws-amplify/backend-cli@latest --no-save
+            - npm install @aws-amplify/backend-cli@latest --no-save --legacy-peer-deps
         build:
           commands:
             - echo "Deploying Amplify Gen 2 backend..."
