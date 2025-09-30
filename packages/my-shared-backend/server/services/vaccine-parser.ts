@@ -7,7 +7,8 @@ const bedrockClient = new BedrockRuntimeClient({
   region: process.env.AWS_REGION || "us-east-1"
 });
 
-const CLAUDE_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0";
+// Use Claude 3.5 Sonnet - the standard on-demand model
+const CLAUDE_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0";
 
 export class VaccineParserService {
   async parseVaccineHistory(rawData: string, birthDate?: string): Promise<VaccineHistoryResult> {
