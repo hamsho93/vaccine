@@ -15,8 +15,10 @@ const backend = defineBackend({
 backend.vaccineApi.resources.lambda.addToRolePolicy(new PolicyStatement({
     actions: ['bedrock:InvokeModel'],
     resources: [
-        // Grant access to Claude 3.5 Sonnet v2
-        `arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`,
+        // Grant access to all Claude 3.5 Sonnet models in us-east-1
+        'arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-*',
+        // Specific model we're using
+        'arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0',
     ],
 }));
 // create a new API stack
