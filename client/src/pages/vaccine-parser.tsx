@@ -667,47 +667,162 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                 ) : (
                   <>
                     {/* Structured builder */}
-                    <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                        <div className="w-full sm:w-72">
-                          <Select onValueChange={addVaccine}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Add a vaccine" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {VACCINE_OPTIONS.map(name => (
-                                <SelectItem key={name} value={name}>{name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                    <div className="space-y-6">
+                      {/* Enhanced Add Vaccine Section */}
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border-2 border-dashed border-blue-300">
+                        <div className="flex items-start gap-4">
+                          <div className="flex-shrink-0 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                            <Plus className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Add Vaccines to Record</h3>
+                            <p className="text-sm text-slate-600 mb-4">
+                              Select vaccines from the dropdown below, then enter the dates when each dose was administered.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3 items-start">
+                              <div className="w-full sm:w-80">
+                                <Select onValueChange={addVaccine}>
+                                  <SelectTrigger className="bg-white border-2 border-blue-300 hover:border-blue-400 transition-colors">
+                                    <SelectValue placeholder="🔍 Select a vaccine to add..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {VACCINE_OPTIONS.map(name => (
+                                      <SelectItem key={name} value={name} className="cursor-pointer hover:bg-blue-50">
+                                        <div className="flex items-center">
+                                          <Syringe className="w-4 h-4 mr-2 text-blue-600" />
+                                          {name}
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  // Trigger the select to open
+                                  const selectTrigger = document.querySelector('[role="combobox"]') as HTMLElement;
+                                  if (selectTrigger) selectTrigger.click();
+                                }}
+                                className="whitespace-nowrap bg-white border-blue-300 hover:bg-blue-50 hover:border-blue-400"
+                              >
+                                <Plus className="w-4 h-4 mr-1" />
+                                Browse Vaccines
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-slate-600">Pick a vaccine to add, then enter dose dates.</div>
+
+                        {/* Quick Add Common Vaccines */}
+                        <div className="mt-4 pt-4 border-t border-blue-200">
+                          <div className="text-sm font-medium text-gray-700 mb-2">Quick Add Common Vaccines:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {['DTaP', 'MMR', 'IPV', 'Hepatitis B', 'Varicella', 'COVID-19'].map(name => (
+                              <Button
+                                key={name}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addVaccine(name)}
+                                disabled={structuredVaccines.some(v => v.name === name)}
+                                className="text-xs bg-white hover:bg-blue-100 border-blue-200"
+                              >
+                                <Plus className="w-3 h-3 mr-1" />
+                                {name}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
+                      {/* Vaccine List */}
                       <div className="space-y-4">
                         {structuredVaccines.length === 0 && (
-                          <div className="text-sm text-slate-600">No vaccines added yet.</div>
+                          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <Syringe className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No vaccines added yet</h3>
+                            <p className="text-sm text-gray-600 mb-4">
+                              Click the dropdown above or use the quick-add buttons to start building your vaccine record
+                            </p>
+                            <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                              <div className="flex items-center">
+                                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-1">1</div>
+                                Add vaccine
+                              </div>
+                              <span>→</span>
+                              <div className="flex items-center">
+                                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-1">2</div>
+                                Enter dates
+                              </div>
+                              <span>→</span>
+                              <div className="flex items-center">
+                                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-1">3</div>
+                                Submit
+                              </div>
+                            </div>
+                          </div>
                         )}
                         {structuredVaccines.map((v, vi) => (
-                          <Card key={v.name} className="border-dashed">
-                            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                              <CardTitle className="text-base">{v.name}</CardTitle>
-                              <Button variant="ghost" size="icon" onClick={() => removeVaccine(v.name)} aria-label="Remove vaccine">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                              {v.doses.map((d, di) => (
-                                <div key={di} className="flex items-center gap-3">
-                                  <div className="text-sm w-16 text-slate-600">Dose {di + 1}</div>
-                                  <Input type="date" className="max-w-xs" value={d.date} onChange={(e) => updateDoseDate(vi, di, e.target.value)} />
-                                  <Button variant="ghost" size="icon" onClick={() => removeDose(vi, di)} aria-label="Remove dose">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                          <Card key={v.name} className="border-2 border-blue-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                            <CardHeader className="pb-3 bg-blue-50">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                                    <Syringe className="w-4 h-4 text-white" />
+                                  </div>
+                                  <CardTitle className="text-lg">{v.name}</CardTitle>
                                 </div>
-                              ))}
-                              <Button variant="outline" size="sm" onClick={() => addDose(vi)}>
-                                <Plus className="h-3.5 w-3.5 mr-1" /> Add Dose
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => removeVaccine(v.name)} 
+                                  aria-label="Remove vaccine"
+                                  className="hover:bg-red-100 hover:text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-3 pt-4">
+                              <div className="space-y-2">
+                                {v.doses.map((d, di) => (
+                                  <div key={di} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center gap-2 min-w-20">
+                                      <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-700">
+                                        {di + 1}
+                                      </div>
+                                      <span className="text-sm font-medium text-slate-700">Dose</span>
+                                    </div>
+                                    <Input 
+                                      type="date" 
+                                      className="flex-1 max-w-xs border-blue-200 focus:border-blue-400 focus:ring-blue-400" 
+                                      value={d.date} 
+                                      onChange={(e) => updateDoseDate(vi, di, e.target.value)}
+                                      placeholder="Select date"
+                                    />
+                                    {v.doses.length > 1 && (
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={() => removeDose(vi, di)} 
+                                        aria-label="Remove dose"
+                                        className="hover:bg-red-100 hover:text-red-600"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => addDose(vi)}
+                                className="w-full border-2 border-dashed border-blue-300 hover:border-blue-400 hover:bg-blue-50 text-blue-700 font-medium"
+                              >
+                                <Plus className="h-4 w-4 mr-2" /> 
+                                Add Another Dose
                               </Button>
                             </CardContent>
                           </Card>
