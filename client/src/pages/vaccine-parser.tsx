@@ -562,27 +562,33 @@ export default function VaccineParser() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Header with Glassmorphism */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-lg border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg transform transition-transform hover:scale-105">
                 <Syringe className="text-white text-lg" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Vaccine History Parser</h1>
-                <p className="text-sm text-slate-600">Medical Professional Tool</p>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">
+                  Vaccine History Parser
+                </h1>
+                <p className="text-sm text-slate-600 font-medium">Medical Professional Tool</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              {/* Feedback Button */}
+              {/* Feedback Button - Keep in header for desktop, will add FAB for mobile */}
               <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="hidden sm:flex items-center gap-2 border-2 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200"
+                  >
                     <MessageSquare className="w-4 h-4" />
-                    <span className="hidden sm:inline">Feedback</span>
+                    <span>Feedback</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
@@ -647,7 +653,7 @@ export default function VaccineParser() {
                       <Button
                         type="submit"
                         disabled={feedbackSubmitting || !feedbackEmail || !feedbackText}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200"
                       >
                         {feedbackSubmitting ? (
                           <>
@@ -717,9 +723,20 @@ export default function VaccineParser() {
           </nav>
         </div>
 
+        {/* Floating Action Button (Mobile Feedback) */}
+        <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+          <DialogTrigger asChild>
+            <Button 
+              className="fixed bottom-6 right-6 sm:hidden w-14 h-14 rounded-full shadow-2xl bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 z-50 transform transition-all duration-200 hover:scale-110 active:scale-95"
+            >
+              <MessageSquare className="w-6 h-6" />
+            </Button>
+          </DialogTrigger>
+        </Dialog>
+
         {/* Input Section */
         }
-        <Card className="mb-8">
+        <Card className="mb-8 border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="flex items-center">
               <FileText className="text-blue-600 mr-2" />
@@ -822,7 +839,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                       <Button 
                         type="submit" 
                         disabled={parseVaccinesMutation.isPending}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
                       >
                         {parseVaccinesMutation.isPending ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -837,8 +854,8 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                   <>
                     {/* Structured builder */}
                     <div className="space-y-6">
-                      {/* Enhanced Add Vaccine Section */}
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border-2 border-dashed border-blue-300">
+              {/* Enhanced Add Vaccine Section */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-dashed border-blue-300 shadow-sm hover:shadow-md transition-all duration-200">
                         <div className="flex items-start gap-4">
                           <div className="flex-shrink-0 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
                             <Plus className="w-6 h-6 text-white" />
@@ -932,7 +949,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                           </div>
                         )}
                         {structuredVaccines.map((v, vi) => (
-                          <Card key={v.name} className="border-2 border-blue-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+                          <Card key={v.name} className="border-0 bg-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1">
                             <CardHeader className="pb-3 bg-blue-50">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -1004,7 +1021,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                         <Shield className="text-emerald-600 mr-1 h-4 w-4" />
                         All data processing is session-based only. No information is stored.
                       </div>
-                      <Button onClick={handleStructuredSubmit} disabled={parseVaccinesMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
+                      <Button onClick={handleStructuredSubmit} disabled={parseVaccinesMutation.isPending} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
                         {parseVaccinesMutation.isPending ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
@@ -1022,8 +1039,8 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
 
         {/* Processing State */}
         {parseVaccinesMutation.isPending && (
-          <Card className="mb-8">
-            <CardContent className="p-6 text-center">
+          <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardContent className="p-8 text-center">
               <div className="flex flex-col items-center">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Processing Vaccine Data</h3>
@@ -1044,7 +1061,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
 
         {/* Results Section */}
         {result && (
-          <Card className="mb-8">
+          <Card className="mb-8 border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-shadow duration-300">
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle className="flex items-center">
@@ -1076,7 +1093,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                   <Button
                     size="sm"
                     onClick={() => exportData('csv')}
-                    className="bg-emerald-600 hover:bg-emerald-700"
+                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-200"
                   >
                     <FileText className="mr-2 h-4 w-4" />
                     Export CSV
@@ -1086,7 +1103,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
             </CardHeader>
             <CardContent>
               {/* Patient Summary */}
-              <div className="bg-slate-50 rounded-lg p-4 mb-6">
+              <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-6 mb-6 border border-blue-100 shadow-sm">
                 <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
                   <User className="mr-2 h-4 w-4" />
                   Patient Information
@@ -1216,7 +1233,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
           };
           
           return (
-            <Card className="mb-8">
+            <Card className="mb-8 border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Target className="text-blue-600 mr-2" />
@@ -1393,7 +1410,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
         })()}
 
         {/* Additional Information */}
-        <Card>
+        <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Info className="text-blue-600 mr-2" />
@@ -1441,7 +1458,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
         </Card>
       </main>
 
-      <footer className="bg-white border-t border-gray-200 mt-16">
+      <footer className="bg-white/80 backdrop-blur-lg border-t border-gray-200/50 mt-16 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col space-y-3">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
