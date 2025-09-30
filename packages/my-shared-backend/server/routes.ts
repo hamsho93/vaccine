@@ -19,7 +19,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate session ID for tracking
       const sessionId = req.headers['x-session-id'] as string || randomUUID();
       
-      // Parse the vaccine data using OpenAI
+      // Parse the vaccine data using AWS Bedrock (Claude 3.5 Sonnet)
       const result = await vaccineParser.parseVaccineHistory(validatedData.vaccineData, validatedData.birthDate);
       
       // Save to database (optional - skip if no database)

@@ -2,6 +2,7 @@ import { defineBackend } from '@aws-amplify/backend';
 import { Stack } from 'aws-cdk-lib';
 import { CorsHttpMethod, HttpApi, HttpMethod, } from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { vaccineApi } from './api/resource';
@@ -10,6 +11,14 @@ const backend = defineBackend({
     data,
     vaccineApi,
 });
+// Grant Bedrock permissions to the Lambda function
+backend.vaccineApi.resources.lambda.addToRolePolicy(new PolicyStatement({
+    actions: ['bedrock:InvokeModel'],
+    resources: [
+        // Grant access to Claude 3.5 Sonnet v2
+        `arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`,
+    ],
+}));
 // create a new API stack
 const apiStack = backend.createStack('api-stack');
 // create a new HTTP Lambda integration

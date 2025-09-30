@@ -1,13 +1,13 @@
-import OpenAI from "openai";
-import fetch from "node-fetch";
+import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { VaccineHistoryResult } from "../../shared/schema";
 import { vaccineNameMapper } from "./vaccine-name-mapper";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key",
-  fetch: fetch as any
+// Use Claude 3.5 Sonnet v2 on AWS Bedrock for structured data extraction
+const bedrockClient = new BedrockRuntimeClient({ 
+  region: process.env.AWS_REGION || "us-east-1"
 });
+
+const CLAUDE_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0";
 
 export class VaccineParserService {
   async parseVaccineHistory(rawData: string, birthDate?: string): Promise<VaccineHistoryResult> {
@@ -60,28 +60,44 @@ ${birthDate ? `- Use the provided birth date: ${birthDate}` : '- If birth date c
 - Add processing notes for any ambiguities or assumptions made`;
 
     try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
+      // Prepare the request for Claude on Bedrock
+      const payload = {
+        anthropic_version: "bedrock-2023-05-31",
+        max_tokens: 4096,
+        temperature: 0.1, // Low temperature for consistent parsing
         messages: [
           {
-            role: "system",
-            content: "You are a medical AI assistant that parses vaccine history data. Always respond with valid JSON in the exact format requested."
-          },
-          {
             role: "user",
-            content: prompt
+            content: `You are a medical AI assistant that parses vaccine history data. Always respond with valid JSON in the exact format requested.\n\n${prompt}`
           }
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.1, // Low temperature for consistent parsing
+        ]
+      };
+
+      const command = new InvokeModelCommand({
+        modelId: CLAUDE_MODEL_ID,
+        contentType: "application/json",
+        accept: "application/json",
+        body: JSON.stringify(payload)
       });
 
-      const content = response.choices[0].message.content;
+      const response = await bedrockClient.send(command);
+      
+      // Parse the response
+      const responseBody = JSON.parse(new TextDecoder().decode(response.body));
+      const content = responseBody.content?.[0]?.text;
+      
       if (!content) {
-        throw new Error("No response from OpenAI");
+        throw new Error("No response from AWS Bedrock");
       }
 
-      const parsed = JSON.parse(content);
+      // Extract JSON from the response (Claude might wrap it in markdown)
+      let jsonText = content;
+      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```\n([\s\S]*?)\n```/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[1];
+      }
+
+      const parsed = JSON.parse(jsonText);
       
       // Normalize vaccine names using centralized mapper
       if (parsed.vaccines) {
