@@ -58,9 +58,10 @@ export function dtapTdapRecommendation(
           notes.push('Adolescent Tdap booster received');
         }
       } else {
-        recommendation = 'Consider Tdap if no booster in past 10 years';
+        recommendation = 'If no Tdap in past 10 years, give booster';
         seriesComplete = true;
-        notes.push('Adult Tdap booster every 10 years or for wound management');
+        notes.push('Decennial tetanus-containing booster recommended');
+        notes.push('Wound management: give Tdap/Td as indicated for dirty or major wounds');
       }
     }
   } else {

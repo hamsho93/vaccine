@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -14,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { amplifyVaccineService } from "@/lib/amplify-client";
 import { ParseVaccineHistoryRequest, VaccineHistoryResult, CatchUpRequest, CatchUpResult } from "@shared/schema";
-import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Link as LinkIcon } from "lucide-react";
+import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Link as LinkIcon, Plus, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 
@@ -50,6 +51,8 @@ export default function VaccineParser() {
   const [result, setResult] = useState<VaccineHistoryResult | null>(null);
   const [catchUpResult, setCatchUpResult] = useState<CatchUpResult | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
+  const [inputMode, setInputMode] = useState<'text' | 'structured'>('text');
+  const [structuredVaccines, setStructuredVaccines] = useState<Array<{ name: string; doses: Array<{ date: string; product?: string }> }>>([]);
 
   // Helper functions for vaccine categorization - aligned with actual system
   const categorizeVaccines = (recommendations: any[]) => {
@@ -164,6 +167,60 @@ export default function VaccineParser() {
       return (ageYears ?? 7) >= 7 ? 'Tdap' : 'DTaP';
     }
     return map[internalCode] || internalCode;
+  };
+
+  // Options for structured entry (common routine vaccines)
+  const VACCINE_OPTIONS: string[] = [
+    'DTaP', 'Tdap', 'IPV', 'MMR', 'Varicella', 'Hepatitis A', 'Hepatitis B', 'Hib',
+    'Pneumococcal Conjugate', 'MenACWY', 'MenB', 'HPV', 'Influenza', 'Rotavirus', 'COVID-19'
+  ];
+
+  const addVaccine = (name: string) => {
+    setStructuredVaccines(prev => {
+      if (prev.some(v => v.name === name)) return prev;
+      return [...prev, { name, doses: [{ date: '' }] }];
+    });
+  };
+
+  const removeVaccine = (name: string) => {
+    setStructuredVaccines(prev => prev.filter(v => v.name !== name));
+  };
+
+  const addDose = (index: number) => {
+    setStructuredVaccines(prev => prev.map((v, i) => i === index ? { ...v, doses: [...v.doses, { date: '' }] } : v));
+  };
+
+  const removeDose = (vaccineIndex: number, doseIndex: number) => {
+    setStructuredVaccines(prev => prev.map((v, i) => {
+      if (i !== vaccineIndex) return v;
+      const nextDoses = v.doses.filter((_, di) => di !== doseIndex);
+      return { ...v, doses: nextDoses.length > 0 ? nextDoses : [{ date: '' }] };
+    }));
+  };
+
+  const updateDoseDate = (vaccineIndex: number, doseIndex: number, date: string) => {
+    setStructuredVaccines(prev => prev.map((v, i) => {
+      if (i !== vaccineIndex) return v;
+      const nextDoses = v.doses.map((d, di) => di === doseIndex ? { ...d, date } : d);
+      return { ...v, doses: nextDoses };
+    }));
+  };
+
+  const handleStructuredSubmit = () => {
+    const birthDate = form.getValues('birthDate');
+    // Serialize to text that parser understands: one line per vaccine, dates separated by spaces
+    const lines = structuredVaccines
+      .filter(v => v.doses.some(d => d.date))
+      .map(v => `${v.name} ${v.doses.filter(d => d.date).map(d => d.date).join(' ')}`);
+    const vaccineData = lines.join('\n');
+
+    if (!birthDate || lines.length === 0) {
+      toast({ title: 'Missing data', description: 'Enter birth date and at least one vaccine dose date', variant: 'destructive' });
+      return;
+    }
+
+    setCurrentStep(2);
+    parseVaccinesMutation.mutate({ birthDate, vaccineData } as any);
   };
 
   // Enhanced vaccine card component
@@ -491,7 +548,8 @@ export default function VaccineParser() {
           </nav>
         </div>
 
-        {/* Input Section */}
+        {/* Input Section */
+        }
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -505,6 +563,18 @@ export default function VaccineParser() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Mode Toggle */}
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-slate-700 font-medium">Input Mode:</div>
+                  <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'text' | 'structured')}>
+                    <TabsList>
+                      <TabsTrigger value="text">Free Text</TabsTrigger>
+                      <TabsTrigger value="structured">Structured</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+
+                {/* Birth date (shared) */}
                 <FormField
                   control={form.control}
                   name="birthDate"
@@ -528,20 +598,22 @@ export default function VaccineParser() {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="vaccineData"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Vaccine History Text <span className="text-red-500">*</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          rows={10}
-                          className="font-mono text-sm"
-                          placeholder={`Example:
+                {inputMode === 'text' ? (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="vaccineData"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Vaccine History Text <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              rows={10}
+                              className="font-mono text-sm"
+                              placeholder={`Example:
 DTaP, Unspecified1/19/2011 (3 m.o.)2/17/2011 (4 m.o.)4/7/2011 (6 m.o.)11/19/2013 (3 y.o.)
 11/19/2014 (4 y.o.)
 Hep A, Unspecified9/27/2011 (12 m.o.)11/14/2012 (2 y.o.)
@@ -553,44 +625,112 @@ Polio, Unspecified1/19/2011 (3 m.o.)2/17/2011 (4 m.o.)11/19/2013 (3 y.o.)11/19/2
 Rotavirus, Unspecified1/19/2011 (3 m.o.)2/17/2011 (4 m.o.)4/7/2011 (6 m.o.)
 Tdap7/31/2025 (14 y.o.)
 Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertTitle>Supported Formats</AlertTitle>
-                  <AlertDescription>
-                    <ul className="list-disc pl-5 space-y-1 mt-2">
-                      <li>Various date formats (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD)</li>
-                      <li>Common vaccine name variations and abbreviations</li>
-                      <li>Age notations (m.o., y.o., months, years)</li>
-                      <li>Multi-line or single-line format entries</li>
-                    </ul>
-                  </AlertDescription>
-                </Alert>
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertTitle>Supported Formats</AlertTitle>
+                      <AlertDescription>
+                        <ul className="list-disc pl-5 space-y-1 mt-2">
+                          <li>Various date formats (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD)</li>
+                          <li>Common vaccine name variations and abbreviations</li>
+                          <li>Age notations (m.o., y.o., months, years)</li>
+                          <li>Multi-line or single-line format entries</li>
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
 
-                <div className="flex justify-between items-center">
-                  <div className="text-sm text-slate-600 flex items-center">
-                    <Shield className="text-emerald-600 mr-1 h-4 w-4" />
-                    All data processing is session-based only. No information is stored.
-                  </div>
-                  <Button 
-                    type="submit" 
-                    disabled={parseVaccinesMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {parseVaccinesMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Syringe className="mr-2 h-4 w-4" />
-                    )}
-                    Parse & Structure Data
-                  </Button>
-                </div>
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-slate-600 flex items-center">
+                        <Shield className="text-emerald-600 mr-1 h-4 w-4" />
+                        All data processing is session-based only. No information is stored.
+                      </div>
+                      <Button 
+                        type="submit" 
+                        disabled={parseVaccinesMutation.isPending}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        {parseVaccinesMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Syringe className="mr-2 h-4 w-4" />
+                        )}
+                        Parse & Structure Data
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Structured builder */}
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                        <div className="w-full sm:w-72">
+                          <Select onValueChange={addVaccine}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Add a vaccine" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {VACCINE_OPTIONS.map(name => (
+                                <SelectItem key={name} value={name}>{name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="text-sm text-slate-600">Pick a vaccine to add, then enter dose dates.</div>
+                      </div>
+
+                      <div className="space-y-4">
+                        {structuredVaccines.length === 0 && (
+                          <div className="text-sm text-slate-600">No vaccines added yet.</div>
+                        )}
+                        {structuredVaccines.map((v, vi) => (
+                          <Card key={v.name} className="border-dashed">
+                            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                              <CardTitle className="text-base">{v.name}</CardTitle>
+                              <Button variant="ghost" size="icon" onClick={() => removeVaccine(v.name)} aria-label="Remove vaccine">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              {v.doses.map((d, di) => (
+                                <div key={di} className="flex items-center gap-3">
+                                  <div className="text-sm w-16 text-slate-600">Dose {di + 1}</div>
+                                  <Input type="date" className="max-w-xs" value={d.date} onChange={(e) => updateDoseDate(vi, di, e.target.value)} />
+                                  <Button variant="ghost" size="icon" onClick={() => removeDose(vi, di)} aria-label="Remove dose">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button variant="outline" size="sm" onClick={() => addDose(vi)}>
+                                <Plus className="h-3.5 w-3.5 mr-1" /> Add Dose
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-slate-600 flex items-center">
+                        <Shield className="text-emerald-600 mr-1 h-4 w-4" />
+                        All data processing is session-based only. No information is stored.
+                      </div>
+                      <Button onClick={handleStructuredSubmit} disabled={parseVaccinesMutation.isPending} className="bg-blue-600 hover:bg-blue-700">
+                        {parseVaccinesMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Syringe className="mr-2 h-4 w-4" />
+                        )}
+                        Parse & Structure Data
+                      </Button>
+                    </div>
+                  </>
+                )}
               </form>
             </Form>
           </CardContent>

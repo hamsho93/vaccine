@@ -19,7 +19,9 @@ export function hpvRecommendation(
   const currentAgeYears = getAgeInYears(birthDate, currentDate);
   const hpvMinAge = 3285;
   const isOlderStart = currentAgeYears >= 15;
-  const hpvTotalDoses = isOlderStart ? 3 : 2;
+  // Immunocompromised persons require 3-dose series regardless of age at initiation
+  const isImmunocompromised = !!specialConditions?.immunocompromised;
+  const hpvTotalDoses = (isOlderStart || isImmunocompromised) ? 3 : 2;
   if (currentAgeYears < 9) {
     recommendation = 'HPV vaccination not recommended under 9 years';
     seriesComplete = true;
@@ -55,7 +57,7 @@ export function hpvRecommendation(
       notes.push('Routine vaccination: 11-12 years (can start at 9 years)');
     }
   } else if (numDoses === 1) {
-    if (isOlderStart) {
+    if (isOlderStart || isImmunocompromised) {
       const nextDate = addDays(sortedDoses[0].date, 28);
       if (currentDate >= nextDate) {
         recommendation = 'Give HPV dose 2 now';
@@ -75,7 +77,7 @@ export function hpvRecommendation(
       }
       notes.push('2-dose schedule: minimum 5 months between doses');
     }
-  } else if (numDoses === 2 && isOlderStart) {
+  } else if (numDoses === 2 && (isOlderStart || isImmunocompromised)) {
     const fiveMonthsFromDose1 = addDays(sortedDoses[0].date, 150);
     const twelveWeeksFromDose2 = addDays(sortedDoses[1].date, 84);
     const nextDate = new Date(Math.max(fiveMonthsFromDose1.getTime(), twelveWeeksFromDose2.getTime()));
@@ -87,8 +89,8 @@ export function hpvRecommendation(
     }
     notes.push('Final dose: minimum 5 months after dose 1 AND 12 weeks after dose 2');
   }
-  if (specialConditions?.immunocompromised) {
-    // Adjust for 3 doses
+  if (isImmunocompromised) {
+    notes.push('Immunocompromised: 3-dose schedule regardless of age at initiation');
   }
   return { vaccineName: normalizedName, recommendation, nextDoseDate, seriesComplete, notes };
 } 
