@@ -1274,12 +1274,17 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
 
       <footer className="bg-white border-t border-gray-200 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-slate-600">
-              Vaccine History Parser v1.0 | Medical Professional Tool
+          <div className="flex flex-col space-y-3">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <div className="text-sm text-slate-600">
+                Vaccine History Parser v1.0 | Medical Professional Tool
+              </div>
+              <div className="text-sm text-slate-600">
+                Based on CDC Guidelines 2025.1 | For healthcare professionals only
+              </div>
             </div>
-            <div className="text-sm text-slate-600">
-              Based on CDC Guidelines 2025.1 | For healthcare professionals only
+            <div className="text-center text-sm text-slate-500 border-t border-gray-100 pt-3">
+              Built in New York • Reviewed by Dr.R with love ❤️
             </div>
           </div>
         </div>
