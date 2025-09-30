@@ -29,9 +29,12 @@ export function hpvRecommendation(
     notes.push('Routine recommendation: 11-12 years');
     return { vaccineName: normalizedName, recommendation, nextDoseDate, seriesComplete, notes };
   } else if (currentAgeYears > 26) {
-    recommendation = 'Not routinely recommended after 26 years; discuss shared decision';
+    recommendation = 'HPV vaccination: shared clinical decision for ages 27-45';
     notes.push('HPV vaccine most effective when given before exposure to HPV');
-    notes.push('Adults 27-45 years: shared clinical decision-making with provider');
+    notes.push('Shared clinical decision-making recommended with provider');
+    notes.push('Consider vaccination history, sexual activity, and HPV exposure risk');
+    const decisionType = 'shared-clinical-decision' as const;
+    return { vaccineName: normalizedName, recommendation, nextDoseDate, seriesComplete, notes, decisionType };
   } else if (numDoses >= hpvTotalDoses) {
     recommendation = 'HPV series complete';
     seriesComplete = true;

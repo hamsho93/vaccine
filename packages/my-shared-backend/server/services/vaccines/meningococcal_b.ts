@@ -30,12 +30,19 @@ export function meningococcalBRecommendation(
       notes: ['For high-risk conditions: asplenia, complement deficiency', 'Routine vaccination recommended at 16-23 years']
     };
   } else {
+    // Ages 16-23: Shared clinical decision-making
     return {
       vaccineName: normalizedName,
       recommendation: 'MenB vaccination based on shared clinical decision-making',
       nextDoseDate: undefined,
       seriesComplete: false,
-      notes: ['Preferred age 16-18 years', 'Discuss benefits and risks with provider']
+      notes: [
+        'Preferred age 16-18 years', 
+        'Discuss benefits and risks with provider',
+        'Consider for college students, military recruits, and those at increased risk',
+        'Two vaccines available: Bexsero (2 doses) or Trumenba (2-3 doses)'
+      ],
+      decisionType: 'shared-clinical-decision' as const
     };
   }
 } 

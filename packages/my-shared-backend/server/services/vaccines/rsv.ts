@@ -48,10 +48,16 @@ export function rsvRecommendation(
   } else if (currentAgeMonths >= 8 && currentAgeMonths < 24) {
     return {
       vaccineName: normalizedName,
-      recommendation: 'RSV immunization may be considered for high-risk children',
+      recommendation: 'RSV immunization: shared clinical decision for high-risk children',
       nextDoseDate: undefined,
       seriesComplete: false,
-      notes: ['Consult provider for individual risk assessment', 'Consider for severe immunocompromise or chronic conditions']
+      notes: [
+        'Consult provider for individual risk assessment', 
+        'Consider for severe immunocompromise or chronic conditions',
+        'Discuss benefits and risks based on individual health status',
+        'May benefit children with chronic lung disease, congenital heart disease, or severe immunocompromise'
+      ],
+      decisionType: 'shared-clinical-decision' as const
     };
   } else {
     return {
