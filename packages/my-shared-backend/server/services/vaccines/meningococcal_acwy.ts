@@ -130,11 +130,14 @@ export function meningococcalACWYRecommendation(
     // College freshman and catch-up through age 21 if no dose at >=16
     const hadDoseAt16OrOlder = sortedDoses.some(d => getAgeInYears(birthDate, d.date) >= 16);
     if (!hadDoseAt16OrOlder) {
-      recommendation = 'Give 1 dose MenACWY now (age 19–21 without a dose at age 16 or older)';
+      recommendation = 'MenACWY recommended for college students: shared clinical decision';
       nextDoseDate = formatDate(currentDate);
       seriesComplete = false;
       notes.push('First-year college students living in residence halls should receive 1 dose if not vaccinated at age 16 or older');
       notes.push('Single catch-up dose recommended through age 21 if no dose at 16+');
+      notes.push('Discuss living situation and outbreak risk with provider');
+      const decisionType = 'shared-clinical-decision' as const;
+      return { vaccineName: normalizedName, recommendation, nextDoseDate, seriesComplete, notes, decisionType };
     } else {
       recommendation = 'MenACWY series complete';
       seriesComplete = true;
