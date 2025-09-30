@@ -15,9 +15,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { amplifyVaccineService } from "@/lib/amplify-client";
 import { ParseVaccineHistoryRequest, VaccineHistoryResult, CatchUpRequest, CatchUpResult } from "@shared/schema";
-import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Link as LinkIcon, Plus, Trash2 } from "lucide-react";
+import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Link as LinkIcon, Plus, Trash2, MessageSquare, Send } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function VaccineParser() {
   // CDC note anchors per vaccine (not exhaustive; add as needed)
@@ -357,6 +358,12 @@ export default function VaccineParser() {
     return crypto.randomUUID();
   });
   const { toast } = useToast();
+  
+  // Feedback form state
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackEmail, setFeedbackEmail] = useState("");
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
   const form = useForm<ParseVaccineHistoryRequest>({
     resolver: zodResolver(ParseVaccineHistoryRequest),
@@ -439,6 +446,65 @@ export default function VaccineParser() {
     catchUpMutation.mutate(catchUpRequest);
   };
 
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate
+    if (!feedbackEmail || !feedbackText) {
+      toast({
+        title: "Missing information",
+        description: "Please provide both email and feedback",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Simple email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(feedbackEmail)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFeedbackSubmitting(true);
+
+    try {
+      // For now, we'll just log to console
+      // In production, you'd send this to your backend
+      console.log('Feedback submitted:', {
+        email: feedbackEmail,
+        feedback: feedbackText,
+        timestamp: new Date().toISOString(),
+        sessionId: sessionId,
+      });
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      toast({
+        title: "Feedback submitted!",
+        description: "Thank you for helping us improve. We'll review your feedback soon.",
+      });
+
+      // Reset form
+      setFeedbackEmail("");
+      setFeedbackText("");
+      setFeedbackOpen(false);
+    } catch (error) {
+      toast({
+        title: "Submission failed",
+        description: "Please try again later or email us directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
+
   const exportData = (format: 'json' | 'csv') => {
     if (!result) return;
 
@@ -498,11 +564,102 @@ export default function VaccineParser() {
                 <p className="text-sm text-slate-600">Medical Professional Tool</p>
               </div>
             </div>
+            <div className="flex items-center gap-4">
+              {/* Feedback Button */}
+              <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    <span className="hidden sm:inline">Feedback</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <form onSubmit={handleFeedbackSubmit}>
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-blue-600" />
+                        Send Feedback
+                      </DialogTitle>
+                      <DialogDescription>
+                        Help us improve! Share your thoughts, report issues, or suggest new features.
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label htmlFor="feedback-email" className="text-sm font-medium text-gray-900">
+                          Email Address <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          id="feedback-email"
+                          type="email"
+                          placeholder="your.email@example.com"
+                          value={feedbackEmail}
+                          onChange={(e) => setFeedbackEmail(e.target.value)}
+                          required
+                          className="w-full"
+                        />
+                        <p className="text-xs text-slate-600">
+                          We'll use this to follow up on your feedback
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label htmlFor="feedback-text" className="text-sm font-medium text-gray-900">
+                          Your Feedback <span className="text-red-500">*</span>
+                        </label>
+                        <Textarea
+                          id="feedback-text"
+                          placeholder="Tell us what you think... suggestions, bugs, feature requests, etc."
+                          value={feedbackText}
+                          onChange={(e) => setFeedbackText(e.target.value)}
+                          required
+                          rows={6}
+                          className="w-full resize-none"
+                        />
+                        <p className="text-xs text-slate-600">
+                          {feedbackText.length}/1000 characters
+                        </p>
+                      </div>
+                    </div>
+
+                    <DialogFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setFeedbackOpen(false)}
+                        disabled={feedbackSubmitting}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={feedbackSubmitting || !feedbackEmail || !feedbackText}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        {feedbackSubmitting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Send Feedback
+                          </>
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
               <div className="text-right">
                 <div className="text-sm text-slate-600">CDC Guidelines Version</div>
                 <div className="text-lg font-semibold text-gray-900">2025.1</div>
                 <div className="text-xs text-slate-600">Updated: September 30, 2025</div>
               </div>
+            </div>
           </div>
         </div>
       </header>
