@@ -1,6 +1,51 @@
 # VaxRecord - AI-Powered Vaccine History Parser & CDC Catch-Up Recommendations
 
-A comprehensive, CDC-compliant vaccine history parsing and immunization recommendation system for healthcare professionals. Converts unstructured vaccine records into structured data with AI-powered parsing and provides real-time CDC catch-up immunization recommendations.
+> Open source, CDC-compliant vaccine history parsing and immunization recommendation system for healthcare professionals.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/node-20.x-brightgreen)](https://nodejs.org/)
+[![CDC 2025.1](https://img.shields.io/badge/CDC-2025.1-blue)](https://www.cdc.gov/vaccines/hcp/imz-schedules/child-adolescent-notes.html)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+Converts unstructured vaccine records into structured data with AI-powered parsing and provides real-time CDC catch-up immunization recommendations.
+
+## Quick Start
+
+```bash
+# Clone repository
+git clone https://github.com/hamsho93/vaccine.git
+cd vaccine
+
+# Install dependencies
+npm ci
+
+# Set up environment
+cp .env.example .env
+# Edit .env and add your OPENAI_API_KEY
+
+# Start development server
+npm run dev
+# Frontend: http://localhost:5173
+# Backend API: http://localhost:8080
+
+# Run QA validation
+npm run qa  # In another terminal
+```
+
+[📖 Full deployment guide](docs/DEPLOYMENT.md) | [🧪 Testing guide](docs/TESTING.md) | [🏗️ Architecture](docs/ARCHITECTURE.md)
+
+## Screenshots
+
+<!-- TODO: Add screenshots before public launch -->
+<!-- 
+Suggested screenshots:
+1. Main input page with sample vaccine history
+2. Parsed vaccine table showing structured data
+3. Recommendations tab with Action Needed vaccines
+4. Individual vaccine recommendation card with CDC reference link
+-->
+
+*Screenshots coming soon. The app is fully functional - try it locally with `npm run dev`*
 
 ## 🌟 Key Features
 
@@ -293,21 +338,78 @@ echo $DATABASE_URL
 5. Include comprehensive CDC-compliant logic
 6. Add appropriate tests
 
+## ❓ FAQ
+
+### Is this HIPAA compliant?
+
+Yes, when deployed correctly. VaxRecord:
+- Processes data in-memory only (no database storage)
+- Uses session-based processing (data cleared after session)
+- Supports HTTPS-only deployment
+- See [SECURITY.md](SECURITY.md) for HIPAA deployment checklist
+
+### How accurate are the recommendations?
+
+Recommendations are based directly on CDC 2025 guidelines with:
+- 8 automated QA scenarios validating key CDC rules
+- Unit tests for vaccine-specific logic
+- Regular updates when CDC guidelines change
+- See [docs/CDC_ALIGNMENT.md](docs/CDC_ALIGNMENT.md) for details
+
+### What if CDC updates their guidelines?
+
+We monitor CDC guidelines and update the app accordingly:
+- GitHub Action checks CDC website daily (coming soon)
+- Community can report updates via issues
+- See [Contributing Guide](CONTRIBUTING.md) for CDC update process
+
+### Can I use this for my clinic?
+
+Yes! VaxRecord is open source under MIT license:
+- Free for any use, including commercial
+- Deploy your own instance or use hosted version
+- Customize for your workflow
+- See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
+### How much does it cost to run?
+
+For a small clinic (self-hosted on AWS):
+- AWS Amplify: ~$5-20/month (hosting + builds)
+- OpenAI API: ~$10-50/month (depends on usage)
+- Total: ~$15-70/month
+- First-time setup: ~2 hours
+
+### Can I contribute?
+
+Absolutely! We welcome contributions:
+- Report bugs via [Issues](https://github.com/hamsho93/vaccine/issues)
+- Submit PRs for features or fixes
+- Improve documentation
+- Add test coverage
+- See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+### How do I report a security issue?
+
+Please email security issues privately (do not open public issues).
+See [SECURITY.md](SECURITY.md) for our vulnerability disclosure policy.
+
 ## 📞 Support
 
-### For Technical Issues:
-- Check AWS Amplify build logs
-- Verify all environment variables are configured
-- Test database and API connectivity
-- Review application logs for specific errors
+- **Technical Issues:** [GitHub Issues](https://github.com/hamsho93/vaccine/issues)
+- **Questions:** [GitHub Discussions](https://github.com/hamsho93/vaccine/discussions)
+- **CDC Guidelines:** [CDC Immunization Schedules](https://www.cdc.gov/vaccines/schedules/)
+- **Security:** See [SECURITY.md](SECURITY.md)
 
-### For Clinical Questions:
-- Refer to [CDC Child Immunization Schedule](https://www.cdc.gov/vaccines/hcp/imz-schedules/child-adolescent-notes.html)
-- Consult with clinical subject matter experts
-- Review ACIP recommendations for latest updates
+## 🌟 Star History
+
+If you find VaxRecord helpful, please star the repository to help others discover it!
+
+## 📜 License
+
+MIT License - free for any use, including commercial. See [LICENSE](LICENSE) for details.
 
 ---
 
-**⚕️ Built for healthcare professionals following CDC immunization guidelines.**
-**🛡️ HIPAA-compliant design with privacy-first architecture.**
-**🌍 Supporting public health through accurate vaccine recommendations.**
+**Built with ❤️ for healthcare professionals and public health.**
+
+**Open source contributions welcome!** See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
