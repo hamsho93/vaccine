@@ -517,6 +517,47 @@ export default function VaccineParser() {
     }
   };
 
+  const loadSampleData = () => {
+    const sampleData = `DTaP, Unspecified
+6/26/2020 (6 m.o.)
+9/24/2020 (9 m.o.)
+6/22/2023 (3 y.o.)
+12/19/2023 (4 y.o.)
+Hep B, Unspecified
+11/28/2019 (0 days)
+1/15/2020 (6 wk.o.)
+9/24/2020 (9 m.o.)
+HiB
+6/26/2020 (6 m.o.)
+9/24/2020 (9 m.o.)
+8/28/2023 (3 y.o.)
+Influenza, Unspecified
+12/19/2023 (4 y.o.)
+MMR
+5/17/2022 (2 y.o.)
+Pneumococcal Conjugate, Unspecified
+6/26/2020 (6 m.o.)
+9/24/2020 (9 m.o.)
+6/22/2023 (3 y.o.)
+Poliovirus
+6/26/2020 (6 m.o.)
+9/24/2020 (9 m.o.)
+6/22/2023 (3 y.o.)
+12/19/2023 (4 y.o.)
+Rotavirus, Unspecified
+6/26/2020 (6 m.o.)
+Varicella (Chicken Pox)
+5/17/2022 (2 y.o.)`;
+
+    form.setValue('vaccineData', sampleData);
+    form.setValue('birthDate', '2019-11-28');
+    
+    toast({
+      title: "Sample data loaded",
+      description: "Click 'Parse & Structure Data' to see how it works",
+    });
+  };
+
   const exportData = (format: 'json' | 'csv') => {
     if (!result) return;
 
@@ -749,15 +790,27 @@ export default function VaccineParser() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Mode Toggle */}
-                <div className="flex items-center gap-3">
-                  <div className="text-sm text-slate-700 font-medium">Input Mode:</div>
-                  <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'text' | 'structured')}>
-                    <TabsList>
-                      <TabsTrigger value="text">Free Text</TabsTrigger>
-                      <TabsTrigger value="structured">Structured</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
+                {/* Mode Toggle and Sample Data */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-slate-700 font-medium">Input Mode:</div>
+                    <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'text' | 'structured')}>
+                      <TabsList>
+                        <TabsTrigger value="text">Free Text</TabsTrigger>
+                        <TabsTrigger value="structured">Structured</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={loadSampleData}
+                    className="flex items-center gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Try Sample Data
+                  </Button>
                 </div>
 
                 {/* Birth date (shared) */}
