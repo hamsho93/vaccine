@@ -21,3 +21,11 @@ dist/
 .amplify/
 amplify/
 **/*.log
+*.tsbuildinfo
+
+# Generated Amplify files
+amplify_outputs.json
+
+# Ad-hoc local scripts
+test-api.ts
+monitor-and-test.sh
