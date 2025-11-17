@@ -377,13 +377,37 @@ export default function VaccineParser() {
     mutationFn: async (data: ParseVaccineHistoryRequest) => {
       return await amplifyVaccineService.parseVaccineHistory(data.vaccineData, data.birthDate);
     },
-    onSuccess: (data: VaccineHistoryResult) => {
+    onSuccess: async (data: VaccineHistoryResult) => {
       setResult(data);
       setCurrentStep(3);
       toast({
         title: "Vaccine history parsed successfully",
         description: `Processed ${data.vaccines.length} vaccine series`,
       });
+      
+      // Automatically generate catch-up recommendations
+      if (data.patientInfo.dateOfBirth) {
+        const catchUpRequest: CatchUpRequest = {
+          birthDate: data.patientInfo.dateOfBirth,
+          currentDate: new Date().toISOString().split('T')[0],
+          vaccineHistory: data.vaccines.map(vaccine => ({
+            vaccineName: vaccine.standardName,
+            doses: vaccine.doses.map(dose => ({
+              date: dose.date
+            }))
+          })),
+          specialConditions: specialConditions
+        };
+        
+        setShowCatchUp(true);
+        catchUpMutation.mutate(catchUpRequest);
+      } else {
+        toast({
+          title: "Birth date required",
+          description: "Cannot generate catch-up recommendations without patient's date of birth",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -412,6 +436,8 @@ export default function VaccineParser() {
         description: error.message,
         variant: "destructive",
       });
+      // Still show parsed results even if catch-up fails
+      // User can retry catch-up generation if needed
     },
   });
 
@@ -420,6 +446,7 @@ export default function VaccineParser() {
     parseVaccinesMutation.mutate(data);
   };
 
+  // Keep function for retry in case catch-up fails
   const generateCatchUpRecommendations = () => {
     if (!result || !result.patientInfo.dateOfBirth) {
       toast({
@@ -554,7 +581,7 @@ Varicella (Chicken Pox)
     
     toast({
       title: "Sample data loaded",
-      description: "Click 'Parse & Structure Data' to see how it works",
+      description: "Click 'Parse & Generate Recommendations' to see how it works",
     });
   };
 
@@ -891,15 +918,19 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                       </div>
                       <Button 
                         type="submit" 
-                        disabled={parseVaccinesMutation.isPending}
+                        disabled={parseVaccinesMutation.isPending || catchUpMutation.isPending}
                         className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
                       >
-                        {parseVaccinesMutation.isPending ? (
+                        {(parseVaccinesMutation.isPending || catchUpMutation.isPending) ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                           <Syringe className="mr-2 h-4 w-4" />
                         )}
-                        Parse & Structure Data
+                        {parseVaccinesMutation.isPending 
+                          ? "Parsing..." 
+                          : catchUpMutation.isPending 
+                          ? "Generating Recommendations..." 
+                          : "Parse & Generate Recommendations"}
                       </Button>
                     </div>
                   </>
@@ -1074,13 +1105,17 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                         <Shield className="text-emerald-600 mr-1 h-4 w-4" />
                         All data processing is session-based only. No information is stored.
                       </div>
-                      <Button onClick={handleStructuredSubmit} disabled={parseVaccinesMutation.isPending} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
-                        {parseVaccinesMutation.isPending ? (
+                      <Button onClick={handleStructuredSubmit} disabled={parseVaccinesMutation.isPending || catchUpMutation.isPending} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
+                        {(parseVaccinesMutation.isPending || catchUpMutation.isPending) ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                           <Syringe className="mr-2 h-4 w-4" />
                         )}
-                        Parse & Structure Data
+                        {parseVaccinesMutation.isPending 
+                          ? "Parsing..." 
+                          : catchUpMutation.isPending 
+                          ? "Generating Recommendations..." 
+                          : "Parse & Generate Recommendations"}
                       </Button>
                     </div>
                   </>
@@ -1091,17 +1126,34 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
         </Card>
 
         {/* Processing State */}
-        {parseVaccinesMutation.isPending && (
+        {(parseVaccinesMutation.isPending || catchUpMutation.isPending) && (
           <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50">
             <CardContent className="p-8 text-center">
               <div className="flex flex-col items-center">
                 <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Processing Vaccine Data</h3>
-                <p className="text-slate-600 mb-4">Using AI to parse and structure vaccine history...</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {parseVaccinesMutation.isPending 
+                    ? "Step 1/2: Processing Vaccine Data" 
+                    : "Step 2/2: Generating Catch-Up Recommendations"}
+                </h3>
+                <p className="text-slate-600 mb-4">
+                  {parseVaccinesMutation.isPending
+                    ? "Using AI to parse and structure vaccine history..."
+                    : "Analyzing vaccine history and generating CDC-compliant recommendations..."}
+                </p>
                 <div className="w-64 bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full w-3/4 transition-all duration-1000"></div>
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-1000"
+                    style={{ 
+                      width: parseVaccinesMutation.isPending ? '50%' : '100%' 
+                    }}
+                  ></div>
                 </div>
-                <p className="text-sm text-slate-600 mt-2">This may take 10-30 seconds</p>
+                <p className="text-sm text-slate-600 mt-2">
+                  {parseVaccinesMutation.isPending 
+                    ? "This may take 10-30 seconds" 
+                    : "Almost done..."}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -1122,19 +1174,27 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                   Structured Vaccine History
                 </CardTitle>
                 <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={generateCatchUpRecommendations}
-                    disabled={catchUpMutation.isPending || !result.patientInfo.dateOfBirth}
-                  >
-                    {catchUpMutation.isPending ? (
+                  {catchUpMutation.isError && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={generateCatchUpRecommendations}
+                      disabled={catchUpMutation.isPending || !result.patientInfo.dateOfBirth}
+                    >
+                      {catchUpMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                      )}
+                      Retry Catch-Up Plan
+                    </Button>
+                  )}
+                  {catchUpMutation.isPending && (
+                    <div className="flex items-center text-sm text-blue-600">
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Target className="mr-2 h-4 w-4" />
-                    )}
-                    Generate Catch-Up Plan
-                  </Button>
+                      Generating recommendations...
+                    </div>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
