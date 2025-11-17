@@ -12,60 +12,25 @@ export function rsvRecommendation(
   specialConditions: SpecialConditions,
   immunityEvidence: any
 ): VaccineRecommendation | null {
-  const currentAgeMonths = getAgeInMonths(birthDate, currentDate);
   const currentAgeYears = getAgeInYears(birthDate, currentDate);
   
-  // RSV immunization (nirsevimab) became available in August 2023
-  // Children born before 2023 who are now 2+ years were too old when vaccine became available
-  const rsvAvailableDate = new Date(2023, 7, 1); // August 2023
-  const patientBirthYear = birthDate.getFullYear();
+  // CDC 2025: RSV vaccine (Abrysvo) is for pregnant women at 32-36 weeks gestation
+  // This is NOT a vaccine for children/adolescents
+  // Nirsevimab (monoclonal antibody) is for infants, but that's separate from RSV vaccine
   
-  if (currentAgeYears >= 2 && patientBirthYear < 2023) {
-    // Patient was too old when RSV vaccine became available
-    return {
-      vaccineName: normalizedName,
-      recommendation: 'RSV immunization not available - patient was too old when vaccine became available',
-      nextDoseDate: undefined,
-      seriesComplete: false,
-      notes: [
-        '⏰ Patient aged out: Born before RSV vaccine availability (August 2023)',
-        'RSV immunization (nirsevimab) was not available for children born before 2023',
-        'Vaccine became available when patient was already 2+ years old',
-        'RSV immunization is primarily for infants and high-risk young children'
-      ],
-      decisionType: 'aged-out' as const
-    };
-  }
-  
-  if (currentAgeYears >= 2) {
-    return {
-      vaccineName: normalizedName,
-      recommendation: 'RSV immunization not routinely recommended for children 2+ years',
-      nextDoseDate: undefined,
-      seriesComplete: true,
-      notes: ['RSV immunization primarily for infants and high-risk young children']
-    };
-  } else if (currentAgeMonths >= 8 && currentAgeMonths < 24) {
-    return {
-      vaccineName: normalizedName,
-      recommendation: 'RSV immunization: shared clinical decision for high-risk children',
-      nextDoseDate: undefined,
-      seriesComplete: false,
-      notes: [
-        'Consult provider for individual risk assessment', 
-        'Consider for severe immunocompromise or chronic conditions',
-        'Discuss benefits and risks based on individual health status',
-        'May benefit children with chronic lung disease, congenital heart disease, or severe immunocompromise'
-      ],
-      decisionType: 'shared-clinical-decision' as const
-    };
-  } else {
-    return {
-      vaccineName: normalizedName,
-      recommendation: 'RSV immunization recommended for infants',
-      nextDoseDate: undefined,
-      seriesComplete: false,
-      notes: ['Nirsevimab recommended for infants during RSV season']
-    };
-  }
+  // RSV vaccine is not recommended for children/adolescents
+  // Return null to exclude from recommendations, or show aged-out status
+  return {
+    vaccineName: normalizedName,
+    recommendation: 'RSV vaccine not recommended for children/adolescents',
+    nextDoseDate: undefined,
+    seriesComplete: true,
+    notes: [
+      'RSV vaccine (Abrysvo) is for pregnant women at 32-36 weeks gestation (September-January)',
+      'Not indicated for children or adolescents',
+      'Nirsevimab (monoclonal antibody) is available for infants but is separate from RSV vaccine',
+      'For maternal RSV vaccination, consult pregnancy immunization guidelines'
+    ],
+    decisionType: 'not-recommended' as const
+  };
 } 

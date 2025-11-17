@@ -97,7 +97,7 @@ describe('CDC QA scenarios', () => {
     expect(hpv!.recommendation.toLowerCase()).toContain('dose 2');
   });
 
-  it('COVID-19 ages 5–11: routine one dose now if unvaccinated', async () => {
+  it('COVID-19 ages 5–11: shared clinical decision-making (not routine)', async () => {
     const birthDate = '2016-07-01'; // age 9
     const currentDate = '2025-07-02';
     const req = { birthDate, currentDate, vaccineHistory: [], specialConditions: {} } as any;
@@ -105,7 +105,82 @@ describe('CDC QA scenarios', () => {
     const covid = res.recommendations.find(r => /covid/i.test(r.vaccineName));
     expect(covid).toBeDefined();
     expect(covid!.recommendation.toLowerCase()).toContain('give 1 dose');
-    expect(covid!.decisionType).toBe('routine');
+    expect(covid!.decisionType).toBe('shared-clinical-decision');
+    expect(covid!.notes.join(' ').toLowerCase()).toContain('shared clinical decision');
+  });
+
+  it('DTaP inadvertently at age 7-9: counts as catch-up, still need adolescent booster', async () => {
+    const birthDate = '2015-01-01'; // age 10
+    const currentDate = '2025-01-01';
+    const req = {
+      birthDate,
+      currentDate,
+      vaccineHistory: [
+        {
+          vaccineName: 'DTaP',
+          doses: [
+            { date: '2015-03-01' }, // dose 1 at 2 months
+            { date: '2015-05-01' }, // dose 2 at 4 months
+            { date: '2015-07-01' }, // dose 3 at 6 months
+            { date: '2016-04-01' }, // dose 4 at 15 months
+            { date: '2022-08-01', product: 'DTaP' }, // DTaP inadvertently at age 7.5 years
+          ],
+        },
+      ],
+      specialConditions: {},
+    } as any;
+
+    const res = await service.generateCatchUpRecommendations(req);
+    const dtap = res.recommendations.find(r => /tdap|dtap/i.test(r.vaccineName));
+    expect(dtap).toBeDefined();
+    expect(dtap!.notes.join(' ').toLowerCase()).toContain('dtap inadvertently');
+    expect(dtap!.notes.join(' ').toLowerCase()).toContain('adolescent');
+    // Should still need adolescent booster
+    if (!dtap!.seriesComplete) {
+      expect(dtap!.recommendation.toLowerCase()).toContain('adolescent');
+    }
+  });
+
+  it('DTaP inadvertently at age 10+: counts as adolescent booster', async () => {
+    const birthDate = '2013-01-01'; // age 12
+    const currentDate = '2025-01-01';
+    const req = {
+      birthDate,
+      currentDate,
+      vaccineHistory: [
+        {
+          vaccineName: 'DTaP',
+          doses: [
+            { date: '2013-03-01' }, // dose 1
+            { date: '2013-05-01' }, // dose 2
+            { date: '2013-07-01' }, // dose 3
+            { date: '2014-04-01' }, // dose 4
+            { date: '2023-06-01', product: 'DTaP' }, // DTaP inadvertently at age 10.5 years
+          ],
+        },
+      ],
+      specialConditions: {},
+    } as any;
+
+    const res = await service.generateCatchUpRecommendations(req);
+    const dtap = res.recommendations.find(r => /tdap|dtap/i.test(r.vaccineName));
+    expect(dtap).toBeDefined();
+    expect(dtap!.notes.join(' ').toLowerCase()).toContain('dtap inadvertently');
+    expect(dtap!.notes.join(' ').toLowerCase()).toContain('adolescent');
+    expect(dtap!.notes.join(' ').toLowerCase()).toContain('no additional');
+    expect(dtap!.seriesComplete).toBe(true);
+  });
+
+  it('RSV: not recommended for children/adolescents (maternal vaccine only)', async () => {
+    const birthDate = '2020-01-01'; // age 5
+    const currentDate = '2025-01-01';
+    const req = { birthDate, currentDate, vaccineHistory: [], specialConditions: {} } as any;
+    const res = await service.generateCatchUpRecommendations(req);
+    const rsv = res.recommendations.find(r => /rsv/i.test(r.vaccineName));
+    expect(rsv).toBeDefined();
+    expect(rsv!.recommendation.toLowerCase()).toContain('not recommended');
+    expect(rsv!.notes.join(' ').toLowerCase()).toContain('pregnant women');
+    expect(rsv!.decisionType).toBe('not-recommended');
   });
 });
 

@@ -716,7 +716,7 @@ Varicella (Chicken Pox)
               <div className="text-right">
                 <div className="text-sm text-slate-600">CDC Guidelines Version</div>
                 <div className="text-lg font-semibold text-gray-900">2025.1</div>
-                <div className="text-xs text-slate-600">Updated: September 30, 2025</div>
+                <div className="text-xs text-slate-600">Updated: November 16, 2025</div>
               </div>
             </div>
           </div>

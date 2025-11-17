@@ -134,6 +134,7 @@ export function meningococcalACWYRecommendation(
       nextDoseDate = formatDate(currentDate);
       seriesComplete = false;
       notes.push('First-year college students living in residence halls should receive 1 dose if not vaccinated at age 16 or older');
+      notes.push('Residence hall requirement: Specifically recommended for students living in dormitories/residence halls');
       notes.push('Single catch-up dose recommended through age 21 if no dose at 16+');
       notes.push('Discuss living situation and outbreak risk with provider');
       const decisionType = 'shared-clinical-decision' as const;

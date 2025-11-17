@@ -21,6 +21,14 @@ export function mmrRecommendation(
   const mmrInterval = 28;
   const currentAgeDays = getAgeInDays(birthDate, currentDate);
   const currentAgeYears = getAgeInYears(birthDate, currentDate);
+  
+  // MMRV note: MMRV not recommended for ages 12-47 months or ages 13-18 years
+  if (currentAgeYears >= 1 && currentAgeYears < 4) {
+    notes.push('MMRV not recommended for ages 12-47 months (administer MMR and varicella separately)');
+  } else if (currentAgeYears >= 13) {
+    notes.push('MMRV not recommended for ages 13-18 years (administer MMR and varicella separately)');
+  }
+  
   if (numDoses >= mmrTotalDoses) {
     recommendation = 'MMR series complete';
     seriesComplete = true;

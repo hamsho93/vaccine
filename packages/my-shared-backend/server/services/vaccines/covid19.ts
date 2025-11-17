@@ -64,9 +64,14 @@ export function covid19Recommendation(
   // Important clinical notes from CDC 2025
   notes.push('Use same manufacturer for series when possible');
   notes.push('Use current season formulation');
+  
+  // CDC 2025: Shared clinical decision-making with emphasis on risk-benefit
+  // Risk-benefit is most favorable for individuals at increased risk for severe COVID-19
+  notes.push('Shared clinical decision-making: Consider individual risk factors for severe COVID-19');
+  notes.push('Risk-benefit most favorable for individuals at increased risk (see CDC risk factors)');
 
-  // Decision type: routine unless special clinical decision required
-  const decisionType = 'routine' as const;
+  // Decision type: shared-clinical-decision per CDC 2025 guidance
+  const decisionType = 'shared-clinical-decision' as const;
 
   return { vaccineName: normalizedName, recommendation, nextDoseDate, seriesComplete, notes, decisionType };
 }

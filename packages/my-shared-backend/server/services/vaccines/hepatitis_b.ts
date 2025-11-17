@@ -28,8 +28,17 @@ export function hepatitisBRecommendation(
     seriesComplete = true;
   } else if (numDoses === 0) {
     if (currentAgeMonths >= 0) {
-      recommendation = 'Give Hepatitis B dose 1 now (birth dose or catch-up)';
-      notes.push('Hepatitis B should be given at birth or as soon as possible');
+      // Emphasize birth dose per CDC 2025 guidelines
+      if (currentAgeMonths < 1) {
+        recommendation = 'Give Hepatitis B dose 1 NOW (birth dose)';
+        notes.push('⚠️ CRITICAL: Hepatitis B birth dose should be given at birth or as soon as possible');
+        notes.push('Birth dose is essential for preventing perinatal transmission');
+        notes.push('Administer within 12-24 hours of birth for infants born to HBsAg-negative mothers');
+      } else {
+        recommendation = 'Give Hepatitis B dose 1 now (catch-up)';
+        notes.push('Hepatitis B should be given at birth or as soon as possible');
+        notes.push('Catch-up vaccination recommended for all unvaccinated children/adolescents');
+      }
     }
   } else if (numDoses === 1) {
     const nextDate = addDays(sortedDoses[0].date, 28);
