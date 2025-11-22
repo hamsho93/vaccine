@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { amplifyVaccineService } from "@/lib/amplify-client";
 import { ParseVaccineHistoryRequest, VaccineHistoryResult, CatchUpRequest, CatchUpResult } from "@shared/schema";
+import { trackVaccineParsed, trackCatchUpGenerated, trackExport, trackSampleDataLoaded, trackError } from "@/lib/heap";
 import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Link as LinkIcon, Plus, Trash2, MessageSquare, Send, Github } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -380,6 +381,10 @@ export default function VaccineParser() {
     onSuccess: async (data: VaccineHistoryResult) => {
       setResult(data);
       setCurrentStep(3);
+      
+      // Track successful parsing
+      trackVaccineParsed(data.vaccines.length, !!data.patientInfo.dateOfBirth);
+      
       toast({
         title: "Vaccine history parsed successfully",
         description: `Processed ${data.vaccines.length} vaccine series`,
@@ -410,6 +415,7 @@ export default function VaccineParser() {
       }
     },
     onError: (error: Error) => {
+      trackError('parsing_failed', error.message);
       toast({
         title: "Parsing failed",
         description: error.message,
@@ -425,12 +431,25 @@ export default function VaccineParser() {
     },
     onSuccess: (data: CatchUpResult) => {
       setCatchUpResult(data);
+      
+      // Track successful catch-up generation
+      const actionNeededCount = data.recommendations.filter(
+        r => !r.seriesComplete && r.decisionType !== 'not-recommended' && r.decisionType !== 'aged-out'
+      ).length;
+      
+      trackCatchUpGenerated(
+        data.recommendations.length,
+        actionNeededCount,
+        data.patientAge
+      );
+      
       toast({
         title: "Catch-up recommendations generated",
         description: `Generated recommendations for ${data.recommendations.length} vaccines`,
       });
     },
     onError: (error: Error) => {
+      trackError('catchup_failed', error.message);
       toast({
         title: "Catch-up analysis failed",
         description: error.message,
@@ -546,38 +565,41 @@ export default function VaccineParser() {
 
   const loadSampleData = () => {
     const sampleData = `DTaP, Unspecified
-6/26/2020 (6 m.o.)
-9/24/2020 (9 m.o.)
-6/22/2023 (3 y.o.)
-12/19/2023 (4 y.o.)
-Hep B, Unspecified
-11/28/2019 (0 days)
-1/15/2020 (6 wk.o.)
-9/24/2020 (9 m.o.)
-HiB
-6/26/2020 (6 m.o.)
-9/24/2020 (9 m.o.)
-8/28/2023 (3 y.o.)
-Influenza, Unspecified
-12/19/2023 (4 y.o.)
-MMR
-5/17/2022 (2 y.o.)
-Pneumococcal Conjugate, Unspecified
-6/26/2020 (6 m.o.)
-9/24/2020 (9 m.o.)
-6/22/2023 (3 y.o.)
-Poliovirus
-6/26/2020 (6 m.o.)
-9/24/2020 (9 m.o.)
-6/22/2023 (3 y.o.)
-12/19/2023 (4 y.o.)
-Rotavirus, Unspecified
-6/26/2020 (6 m.o.)
-Varicella (Chicken Pox)
-5/17/2022 (2 y.o.)`;
+   6/26/2020 (6 m.o.)
+   9/24/2020 (9 m.o.)
+   6/22/2023 (3 y.o.)
+   12/19/2023 (4 y.o.)
+   Hep B, Unspecified
+   11/28/2019 (0 days)
+   1/15/2020 (6 wk.o.)
+   9/24/2020 (9 m.o.)
+   HiB
+   6/26/2020 (6 m.o.)
+   9/24/2020 (9 m.o.)
+   8/28/2023 (3 y.o.)
+   Influenza, Unspecified
+   12/19/2023 (4 y.o.)
+   MMR
+   5/17/2022 (2 y.o.)
+   Pneumococcal Conjugate, Unspecified
+   6/26/2020 (6 m.o.)
+   9/24/2020 (9 m.o.)
+   6/22/2023 (3 y.o.)
+   Poliovirus
+   6/26/2020 (6 m.o.)
+   9/24/2020 (9 m.o.)
+   6/22/2023 (3 y.o.)
+   12/19/2023 (4 y.o.)
+   Rotavirus, Unspecified
+   6/26/2020 (6 m.o.)
+   Varicella (Chicken Pox)
+   5/17/2022 (2 y.o.)`;
 
     form.setValue('vaccineData', sampleData);
     form.setValue('birthDate', '2019-11-28');
+    
+    // Track sample data loaded
+    trackSampleDataLoaded();
     
     toast({
       title: "Sample data loaded",
@@ -623,6 +645,9 @@ Varicella (Chicken Pox)
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
+    // Track export action
+    trackExport(format);
+    
     toast({
       title: `${format.toUpperCase()} exported`,
       description: `Downloaded ${filename}`,
