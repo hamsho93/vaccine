@@ -2,56 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+
 :root {
-  --background: hsl(0, 0%, 100%);
-  --foreground: hsl(20, 14.3%, 4.1%);
-  --muted: hsl(210, 40%, 98%);
-  --muted-foreground: hsl(215.4, 16.3%, 46.9%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(20, 14.3%, 4.1%);
-  --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(20, 14.3%, 4.1%);
-  --border: hsl(214.3, 31.8%, 91.4%);
-  --input: hsl(214.3, 31.8%, 91.4%);
-  --primary: hsl(221.2, 83.2%, 53.3%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(210, 40%, 96%);
-  --secondary-foreground: hsl(222.2, 84%, 4.9%);
-  --accent: hsl(210, 40%, 96%);
-  --accent-foreground: hsl(222.2, 84%, 4.9%);
-  --destructive: hsl(0, 84.2%, 60.2%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(221.2, 83.2%, 53.3%);
-  --radius: 0.5rem;
-  
-  /* Medical theme colors */
-  --medical-blue: hsl(221.2, 83.2%, 53.3%);
-  --medical-green: hsl(159, 64.4%, 51.6%);
-  --medical-gray: hsl(215.4, 16.3%, 46.9%);
-  --medical-bg: hsl(210, 40%, 98%);
+  --background: #f7fafc;
+  --foreground: #0f172a;
+  --muted: #e2e8f0;
+  --muted-foreground: #475569;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --border: #e2e8f0;
+  --border-strong: #cbd5f5;
+  --input: #dbeafe;
+  --primary: #2563eb;
+  --primary-foreground: #f8fafc;
+  --secondary: #14b8a6;
+  --secondary-foreground: #ecfdf5;
+  --accent: #0d9488;
+  --accent-foreground: #f0fdfa;
+  --destructive: #f97316;
+  --destructive-foreground: #fff7ed;
+  --warning: #fbbf24;
+  --warning-foreground: #78350f;
+  --success: #10b981;
+  --success-foreground: #022c22;
+  --info: #0ea5e9;
+  --info-foreground: #f0f9ff;
+  --ring: #93c5fd;
+  --radius: 0.875rem;
+
+  --gradient-primary: linear-gradient(120deg, #2563eb 0%, #14b8a6 100%);
+  --gradient-card: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(20, 184, 166, 0.08));
+
+  --quick-action-bg: rgba(255, 255, 255, 0.92);
+  --quick-action-border: rgba(148, 163, 184, 0.4);
+
+  --shadow-card: 0 12px 30px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.05);
 }
 
 .dark {
-  --background: hsl(222.2, 84%, 4.9%);
-  --foreground: hsl(210, 40%, 98%);
-  --muted: hsl(217.2, 32.6%, 17.5%);
-  --muted-foreground: hsl(215, 20.2%, 65.1%);
-  --popover: hsl(222.2, 84%, 4.9%);
-  --popover-foreground: hsl(210, 40%, 98%);
-  --card: hsl(222.2, 84%, 4.9%);
-  --card-foreground: hsl(210, 40%, 98%);
-  --border: hsl(217.2, 32.6%, 17.5%);
-  --input: hsl(217.2, 32.6%, 17.5%);
-  --primary: hsl(221.2, 83.2%, 53.3%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(217.2, 32.6%, 17.5%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --accent: hsl(217.2, 32.6%, 17.5%);
-  --accent-foreground: hsl(210, 40%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(221.2, 83.2%, 53.3%);
-  --radius: 0.5rem;
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #cbd5f5;
+  --popover: #0f172a;
+  --popover-foreground: #f8fafc;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --border: #1f2937;
+  --border-strong: #1e293b;
+  --input: #1e293b;
+  --primary: #93c5fd;
+  --primary-foreground: #0f172a;
+  --secondary: #0f766e;
+  --secondary-foreground: #ecfdf5;
+  --accent: #0f766e;
+  --accent-foreground: #ecfdf5;
+  --destructive: #fb923c;
+  --destructive-foreground: #0f172a;
+  --warning: #f59e0b;
+  --warning-foreground: #fff7ed;
+  --success: #34d399;
+  --success-foreground: #022c22;
+  --info: #38bdf8;
+  --info-foreground: #0f172a;
+  --ring: #2563eb;
+  --radius: 0.875rem;
 }
 
 @layer base {
@@ -60,6 +78,37 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    @apply min-h-screen bg-background text-foreground antialiased;
+  }
+}
+
+@layer components {
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .bg-gradient-primary {
+    background-image: var(--gradient-primary);
+  }
+
+  .bg-gradient-card {
+    background-image: var(--gradient-card);
+  }
+}
+
+@layer utilities {
+  .has-scrollbar::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+
+  .has-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .has-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.6);
+    border-radius: 9999px;
   }
 }

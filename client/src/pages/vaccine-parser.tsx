@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -11,15 +11,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { amplifyVaccineService } from "@/lib/amplify-client";
 import { ParseVaccineHistoryRequest, VaccineHistoryResult, CatchUpRequest, CatchUpResult } from "@shared/schema";
 import { trackVaccineParsed, trackCatchUpGenerated, trackExport, trackSampleDataLoaded, trackError } from "@/lib/heap";
-import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Link as LinkIcon, Plus, Trash2, MessageSquare, Send, Github } from "lucide-react";
+import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Link as LinkIcon, Plus, Trash2, MessageSquare, Send } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { formatDistanceToNow } from "date-fns";
+import {
+  NextStepsCard,
+  ProcessingBanner,
+  QuickActionBar,
+  StepIndicator,
+  SummaryStrip,
+  TopNav,
+  type NextStepItem,
+  type SummaryItem,
+} from "@/components/vaccine/layout";
+import { ImportantInformationCard } from "@/components/vaccine/important-info-card";
 
 export default function VaccineParser() {
   // CDC note anchors per vaccine (not exhaustive; add as needed)
@@ -460,6 +471,79 @@ export default function VaccineParser() {
     },
   });
 
+  const categorizedRecommendations = useMemo(() => {
+    if (!catchUpResult) {
+      return null;
+    }
+    return categorizeVaccines(catchUpResult.recommendations);
+  }, [catchUpResult]);
+
+  const isProcessing = parseVaccinesMutation.isPending || catchUpMutation.isPending;
+
+  const summaryItems: SummaryItem[] = useMemo(() => {
+    const patientAgeValue =
+      catchUpResult?.patientAge ||
+      result?.patientInfo.currentAge ||
+      (isProcessing ? "Processing" : "Awaiting data");
+    const vaccinesParsed = result?.vaccines.length ? `${result.vaccines.length}` : "0";
+    const actionNeededCount = categorizedRecommendations
+      ? categorizedRecommendations.actionNeeded.length + categorizedRecommendations.sharedDecision.length
+      : 0;
+    const lastUpdatedSource = catchUpResult?.processedAt || result?.processedAt;
+    const lastUpdatedValue = lastUpdatedSource
+      ? formatDistanceToNow(new Date(lastUpdatedSource), { addSuffix: true })
+      : isProcessing
+        ? "In progress"
+        : "Not yet run";
+
+    return [
+      {
+        label: "Patient Age",
+        value: patientAgeValue || "—",
+        helper: result?.patientInfo.dateOfBirth
+          ? `DOB ${new Date(result.patientInfo.dateOfBirth).toLocaleDateString()}`
+          : "Provide date of birth",
+        icon: User,
+      },
+      {
+        label: "Vaccines Parsed",
+        value: vaccinesParsed,
+        helper: result ? "History structured" : "Awaiting input",
+        icon: Syringe,
+      },
+      {
+        label: "Action Needed",
+        value: `${actionNeededCount}`,
+        helper: categorizedRecommendations ? `${actionNeededCount} outstanding` : "Generated after parsing",
+        icon: AlertTriangle,
+      },
+      {
+        label: "Last Updated",
+        value: lastUpdatedValue,
+        helper: lastUpdatedSource ? new Date(lastUpdatedSource).toLocaleString() : "Run parser to update",
+        icon: Clock,
+      },
+    ];
+  }, [catchUpResult, result, categorizedRecommendations, isProcessing]);
+
+  const nextStepItems: NextStepItem[] = useMemo(() => {
+    if (!categorizedRecommendations) return [];
+    const actionable = [
+      ...categorizedRecommendations.actionNeeded,
+      ...categorizedRecommendations.sharedDecision,
+    ];
+
+    return actionable.slice(0, 4).map((rec, index) => ({
+      id: `${rec.vaccineName}-${index}`,
+      title: formatVaccineName(
+        rec.vaccineName,
+        catchUpResult?.patientAge ? parseInt(String(catchUpResult.patientAge)) : undefined
+      ),
+      detail: rec.recommendation,
+      nextLabel: rec.nextDoseDate ? `Next dose: ${rec.nextDoseDate}` : undefined,
+    }));
+  }, [categorizedRecommendations, catchUpResult]);
+
   const onSubmit = (data: ParseVaccineHistoryRequest) => {
     setCurrentStep(2);
     parseVaccinesMutation.mutate(data);
@@ -654,192 +738,28 @@ export default function VaccineParser() {
     });
   };
 
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Header with Glassmorphism */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg shadow-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg transform transition-transform hover:scale-105">
-                <Syringe className="text-white text-lg" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text text-transparent">
-                  Vaccine History Parser
-                </h1>
-                <p className="text-sm text-slate-600 font-medium">Medical Professional Tool</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              {/* GitHub Link */}
-              <a
-                href="https://github.com/hamsho93/vaccine"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-600 hover:text-gray-900 transition-colors duration-200"
-                aria-label="View on GitHub"
-              >
-                <Github className="w-5 h-5" />
-              </a>
-              
-              {/* Feedback Button - Keep in header for desktop, will add FAB for mobile */}
-              <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="hidden sm:flex items-center gap-2 border-2 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Feedback</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <form onSubmit={handleFeedbackSubmit}>
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2">
-                        <MessageSquare className="w-5 h-5 text-blue-600" />
-                        Send Feedback
-                      </DialogTitle>
-                      <DialogDescription>
-                        Help us improve! Share your thoughts, report issues, or suggest new features.
-                      </DialogDescription>
-                    </DialogHeader>
-                    
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <label htmlFor="feedback-email" className="text-sm font-medium text-gray-900">
-                          Email Address <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                          id="feedback-email"
-                          type="email"
-                          placeholder="your.email@example.com"
-                          value={feedbackEmail}
-                          onChange={(e) => setFeedbackEmail(e.target.value)}
-                          required
-                          className="w-full"
-                        />
-                        <p className="text-xs text-slate-600">
-                          We&apos;ll use this to follow up on your feedback
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label htmlFor="feedback-text" className="text-sm font-medium text-gray-900">
-                          Your Feedback <span className="text-red-500">*</span>
-                        </label>
-                        <Textarea
-                          id="feedback-text"
-                          placeholder="Tell us what you think... suggestions, bugs, feature requests, etc."
-                          value={feedbackText}
-                          onChange={(e) => setFeedbackText(e.target.value)}
-                          required
-                          rows={6}
-                          className="w-full resize-none"
-                        />
-                        <p className="text-xs text-slate-600">
-                          {feedbackText.length}/1000 characters
-                        </p>
-                      </div>
-                    </div>
-
-                    <DialogFooter>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setFeedbackOpen(false)}
-                        disabled={feedbackSubmitting}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={feedbackSubmitting || !feedbackEmail || !feedbackText}
-                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200"
-                      >
-                        {feedbackSubmitting ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="w-4 h-4 mr-2" />
-                            Send Feedback
-                          </>
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-
-              <div className="text-right">
-                <div className="text-sm text-slate-600">CDC Guidelines Version</div>
-                <div className="text-lg font-semibold text-gray-900">2025.1</div>
-                <div className="text-xs text-slate-600">Updated: November 16, 2025</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--background)] text-foreground">
+      <TopNav onFeedback={() => setFeedbackOpen(true)} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Workflow Indicator */}
-        <div className="mb-8">
-          <nav aria-label="Progress" className="flex justify-center">
-            <ol className="flex items-center space-x-5">
-              <li className="flex items-center">
-                <div className={`relative flex items-center justify-center w-8 h-8 rounded-full ${
-                  currentStep >= 1 ? 'bg-blue-600' : 'bg-gray-300'
-                }`}>
-                  <span className={`text-sm font-medium ${currentStep >= 1 ? 'text-white' : 'text-gray-500'}`}>1</span>
-                </div>
-                <span className={`ml-3 text-sm font-medium ${currentStep >= 1 ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Input Data
-                </span>
-              </li>
-              <li className="flex items-center">
-                <div className="flex-auto border-t-2 border-gray-300"></div>
-                <div className={`relative flex items-center justify-center w-8 h-8 rounded-full ml-6 ${
-                  currentStep >= 2 ? 'bg-blue-600' : 'bg-gray-300'
-                }`}>
-                  <span className={`text-sm font-medium ${currentStep >= 2 ? 'text-white' : 'text-gray-500'}`}>2</span>
-                </div>
-                <span className={`ml-3 text-sm font-medium ${currentStep >= 2 ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Process
-                </span>
-              </li>
-              <li className="flex items-center">
-                <div className="flex-auto border-t-2 border-gray-300"></div>
-                <div className={`relative flex items-center justify-center w-8 h-8 rounded-full ml-6 ${
-                  currentStep >= 3 ? 'bg-blue-600' : 'bg-gray-300'
-                }`}>
-                  <span className={`text-sm font-medium ${currentStep >= 3 ? 'text-white' : 'text-gray-500'}`}>3</span>
-                </div>
-                <span className={`ml-3 text-sm font-medium ${currentStep >= 3 ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Review & Export
-                </span>
-              </li>
-            </ol>
-          </nav>
-        </div>
+        <section id="overview" className="mb-8 space-y-6">
+          <StepIndicator currentStep={currentStep} />
+          <SummaryStrip items={summaryItems} />
+        </section>
 
-        {/* Floating Action Button (Mobile Feedback) */}
-        <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="fixed bottom-6 right-6 sm:hidden w-14 h-14 rounded-full shadow-2xl bg-gradient-to-br from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 z-50 transform transition-all duration-200 hover:scale-110 active:scale-95"
-            >
-              <MessageSquare className="w-6 h-6" />
-            </Button>
-          </DialogTrigger>
-        </Dialog>
+        {isProcessing && (
+          <div className="mb-8">
+            <ProcessingBanner isParsing={parseVaccinesMutation.isPending} />
+          </div>
+        )}
 
-        {/* Input Section */
-        }
+
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+          <div className="space-y-8">
+        {/* Input Section */}
+        <section id="intake">
         <Card className="mb-8 border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-shadow duration-300">
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -1160,40 +1080,8 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
             </Form>
           </CardContent>
         </Card>
+        </section>
 
-        {/* Processing State */}
-        {(parseVaccinesMutation.isPending || catchUpMutation.isPending) && (
-          <Card className="mb-8 border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50">
-            <CardContent className="p-8 text-center">
-              <div className="flex flex-col items-center">
-                <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {parseVaccinesMutation.isPending 
-                    ? "Step 1/2: Processing Vaccine Data" 
-                    : "Step 2/2: Generating Catch-Up Recommendations"}
-                </h3>
-                <p className="text-slate-600 mb-4">
-                  {parseVaccinesMutation.isPending
-                    ? "Using AI to parse and structure vaccine history..."
-                    : "Analyzing vaccine history and generating CDC-compliant recommendations..."}
-                </p>
-                <div className="w-64 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-1000"
-                    style={{ 
-                      width: parseVaccinesMutation.isPending ? '50%' : '100%' 
-                    }}
-                  ></div>
-                </div>
-                <p className="text-sm text-slate-600 mt-2">
-                  {parseVaccinesMutation.isPending 
-                    ? "This may take 10-30 seconds" 
-                    : "Almost done..."}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
         {parseVaccinesMutation.isError && (
           <Button onClick={() => parseVaccinesMutation.mutate(form.getValues())}>
             Retry Parsing
@@ -1202,6 +1090,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
 
         {/* Results Section */}
         {result && (
+          <section id="history">
           <Card className="mb-8 border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-shadow duration-300">
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -1364,6 +1253,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
               )}
             </CardContent>
           </Card>
+          </section>
         )}
 
         {/* Special Conditions Section removed per request */}
@@ -1382,6 +1272,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
           };
           
           return (
+            <section id="recommendations">
             <Card className="mb-8 border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-shadow duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -1555,57 +1446,25 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                 </div>
               </CardContent>
             </Card>
+            </section>
           );
         })()}
 
-        {/* Additional Information */}
-        <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Info className="text-blue-600 mr-2" />
-              Important Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-md font-semibold text-gray-900 mb-3">Data Privacy & Security</h3>
-                <ul className="text-sm text-slate-600 space-y-2">
-                  <li className="flex items-start">
-                    <CheckCircle className="text-emerald-600 mr-2 mt-0.5 h-4 w-4" />
-                    All processing is performed via secure API calls
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="text-emerald-600 mr-2 mt-0.5 h-4 w-4" />
-                    No patient data is stored or transmitted to external servers
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="text-emerald-600 mr-2 mt-0.5 h-4 w-4" />
-                    Data is automatically cleared when the session ends
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-md font-semibold text-gray-900 mb-3">Clinical Use Guidelines</h3>
-                <ul className="text-sm text-slate-600 space-y-2">
-                  <li className="flex items-start">
-                    <Syringe className="text-blue-600 mr-2 mt-0.5 h-4 w-4" />
-                    Always verify structured data against original records
-                  </li>
-                  <li className="flex items-start">
-                    <Syringe className="text-blue-600 mr-2 mt-0.5 h-4 w-4" />
-                    Use in conjunction with current CDC immunization guidelines
-                  </li>
-                  <li className="flex items-start">
-                    <Syringe className="text-blue-600 mr-2 mt-0.5 h-4 w-4" />
-                    Consider individual patient factors and contraindications
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <aside className="space-y-6" id="resources">
+            <NextStepsCard
+              items={nextStepItems}
+              hasResult={Boolean(result)}
+              onExport={exportData}
+              onFeedback={() => setFeedbackOpen(true)}
+            />
+            <ImportantInformationCard />
+          </aside>
+        </div>
       </main>
+
+      <QuickActionBar visible={Boolean(result)} onExport={exportData} onFeedback={() => setFeedbackOpen(true)} />
 
       <footer className="bg-white/80 backdrop-blur-lg border-t border-gray-200/50 mt-16 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -1624,6 +1483,84 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
           </div>
         </div>
       </footer>
+
+      <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <form onSubmit={handleFeedbackSubmit}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-blue-600" />
+                Send Feedback
+              </DialogTitle>
+              <DialogDescription>
+                Help us improve! Share your thoughts, report issues, or suggest new features.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label htmlFor="feedback-email" className="text-sm font-medium text-gray-900">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  id="feedback-email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={feedbackEmail}
+                  onChange={(e) => setFeedbackEmail(e.target.value)}
+                  required
+                  className="w-full"
+                />
+                <p className="text-xs text-slate-600">We&apos;ll use this to follow up on your feedback</p>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="feedback-text" className="text-sm font-medium text-gray-900">
+                  Your Feedback <span className="text-red-500">*</span>
+                </label>
+                <Textarea
+                  id="feedback-text"
+                  placeholder="Tell us what you think... suggestions, bugs, feature requests, etc."
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  required
+                  rows={6}
+                  className="w-full resize-none"
+                />
+                <p className="text-xs text-slate-600">{feedbackText.length}/1000 characters</p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setFeedbackOpen(false)}
+                disabled={feedbackSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={feedbackSubmitting || !feedbackEmail || !feedbackText}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                {feedbackSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Feedback
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
