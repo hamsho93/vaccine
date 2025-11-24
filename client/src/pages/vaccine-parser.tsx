@@ -23,12 +23,14 @@ import { formatDistanceToNow } from "date-fns";
 import {
   NextStepsCard,
   ProcessingBanner,
+  ProgressRail,
   QuickActionBar,
   StepIndicator,
   SummaryStrip,
   TopNav,
   type NextStepItem,
   type SummaryItem,
+  type ProgressNode,
 } from "@/components/vaccine/layout";
 import { ImportantInformationCard } from "@/components/vaccine/important-info-card";
 
@@ -544,6 +546,48 @@ export default function VaccineParser() {
     }));
   }, [categorizedRecommendations, catchUpResult]);
 
+  const progressNodes = useMemo<ProgressNode[]>(() => {
+    const base: ProgressNode[] = [
+      {
+        label: "Intake",
+        href: "#intake",
+        status: "current",
+        helper: "Paste or enter records",
+      },
+      {
+        label: "History",
+        href: "#history",
+        status: "upcoming",
+        helper: "Review parsed data",
+      },
+      {
+        label: "Recommendations",
+        href: "#recommendations",
+        status: "upcoming",
+        helper: "Catch-up plan",
+      },
+      {
+        label: "Resources",
+        href: "#resources",
+        status: "upcoming",
+        helper: "Privacy & guides",
+      },
+    ];
+
+    if (result && !catchUpResult) {
+      base[0].status = "complete";
+      base[1].status = "current";
+    }
+
+    if (catchUpResult) {
+      base[0].status = "complete";
+      base[1].status = "complete";
+      base[2].status = "current";
+    }
+
+    return base;
+  }, [result, catchUpResult]);
+
   const onSubmit = (data: ParseVaccineHistoryRequest) => {
     setCurrentStep(2);
     parseVaccinesMutation.mutate(data);
@@ -756,7 +800,12 @@ export default function VaccineParser() {
         )}
 
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+        <div className="mt-8 flex flex-col gap-8 xl:flex-row">
+          <div className="hidden xl:block w-[220px] shrink-0">
+            <ProgressRail nodes={progressNodes} />
+          </div>
+          <div className="flex-1">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
           <div className="space-y-8">
         {/* Input Section */}
         <section id="intake">
@@ -1140,117 +1189,140 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
               </div>
             </CardHeader>
             <CardContent>
-              {/* Patient Summary */}
-              <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-6 mb-6 border border-blue-100 shadow-sm">
-                <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  Patient Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <span className="text-sm font-medium text-slate-600">Date of Birth:</span>
-                    <div className="text-sm text-gray-900">
-                      {result.patientInfo.dateOfBirth ? new Date(result.patientInfo.dateOfBirth).toLocaleDateString() : "Not determined"}
+              <div className="grid gap-6 xl:grid-cols-12">
+                <div className="space-y-6 xl:col-span-8">
+                  <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-6 border border-blue-100 shadow-sm">
+                    <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      Patient Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <span className="text-sm font-medium text-slate-600">Date of Birth:</span>
+                        <div className="text-sm text-gray-900">
+                          {result.patientInfo.dateOfBirth
+                            ? new Date(result.patientInfo.dateOfBirth).toLocaleDateString()
+                            : "Not determined"}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-slate-600">Current Age:</span>
+                        <div className="text-sm text-gray-900">
+                          {result.patientInfo.currentAge || "Not determined"}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-slate-600">Total Vaccines:</span>
+                        <div className="text-sm text-gray-900">
+                          {result.patientInfo.totalVaccines} vaccine series
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <span className="text-sm font-medium text-slate-600">Current Age:</span>
-                    <div className="text-sm text-gray-900">
-                      {result.patientInfo.currentAge || "Not determined"}
-                    </div>
+
+                  <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+                    <p className="text-sm text-blue-800">
+                      <span className="font-semibold">Parsed History:</span> Vaccines already given to the patient based on your input. DTaP/Tdap are the same vaccine series but named differently by age.
+                    </p>
                   </div>
-                  <div>
-                    <span className="text-sm font-medium text-slate-600">Total Vaccines:</span>
-                    <div className="text-sm text-gray-900">
-                      {result.patientInfo.totalVaccines} vaccine series
-                    </div>
+                  <div className="overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Vaccine
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Doses Given
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Administration Dates
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Patient Age at Doses
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Series Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {result.vaccines.map((vaccine, index) => (
+                          <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="text-sm font-medium text-gray-900">{vaccine.standardName}</div>
+                                {vaccine.abbreviation && (
+                                  <div className="text-xs text-slate-600 ml-2">({vaccine.abbreviation})</div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {vaccine.doses.length} dose{vaccine.doses.length !== 1 ? "s" : ""}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900 space-y-1">
+                                {vaccine.doses.map((dose, doseIndex) => (
+                                  <div key={doseIndex}>{dose.date}</div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-900 space-y-1">
+                                {vaccine.doses.map((dose, doseIndex) => (
+                                  <div key={doseIndex}>{dose.patientAge}</div>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge
+                                variant={vaccine.seriesStatus === "Complete" ? "default" : "secondary"}
+                                className={vaccine.seriesStatus === "Complete" ? "bg-emerald-100 text-emerald-800" : ""}
+                              >
+                                {vaccine.seriesStatus}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-              </div>
 
-              {/* Vaccines Table */}
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <span className="font-semibold">Parsed History:</span> Vaccines already given to the patient based on your input. DTaP/Tdap are the same vaccine series but named differently by age.
-                </p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Vaccine
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Doses Given
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Administration Dates
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Patient Age at Doses
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Series Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {result.vaccines.map((vaccine, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="text-sm font-medium text-gray-900">{vaccine.standardName}</div>
-                            {vaccine.abbreviation && (
-                              <div className="text-xs text-slate-600 ml-2">({vaccine.abbreviation})</div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {vaccine.doses.length} dose{vaccine.doses.length !== 1 ? 's' : ''}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 space-y-1">
-                            {vaccine.doses.map((dose, doseIndex) => (
-                              <div key={doseIndex}>{dose.date}</div>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 space-y-1">
-                            {vaccine.doses.map((dose, doseIndex) => (
-                              <div key={doseIndex}>{dose.patientAge}</div>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge 
-                            variant={vaccine.seriesStatus === 'Complete' ? 'default' : 'secondary'}
-                            className={vaccine.seriesStatus === 'Complete' ? 'bg-emerald-100 text-emerald-800' : ''}
-                          >
-                            {vaccine.seriesStatus}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                <div className="space-y-4 xl:col-span-4">
+                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-900">Snapshot</p>
+                    <div className="mt-3 space-y-2 text-sm text-slate-600">
+                      <div className="flex items-center justify-between">
+                        <span>Series complete</span>
+                        <span className="font-semibold text-emerald-600">
+                          {result.vaccines.filter((v) => v.seriesStatus === "Complete").length}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Doses captured</span>
+                        <span className="font-semibold text-slate-900">
+                          {result.vaccines.reduce((acc, v) => acc + v.doses.length, 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Processing Notes */}
-              {result.processingNotes.length > 0 && (
-                <Alert className="mt-6">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Processing Notes</AlertTitle>
-                  <AlertDescription>
-                    <ul className="list-disc pl-5 space-y-1 mt-2">
-                      {result.processingNotes.map((note, index) => (
-                        <li key={index}>{note}</li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
+                  {result.processingNotes.length > 0 && (
+                    <Alert className="bg-amber-50 border-amber-200 text-amber-900">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Processing Notes</AlertTitle>
+                      <AlertDescription>
+                        <ul className="list-disc pl-5 space-y-1 mt-2">
+                          {result.processingNotes.map((note, index) => (
+                            <li key={index}>{note}</li>
+                          ))}
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
           </section>
@@ -1291,57 +1363,74 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
               
               <CardContent>
                 {/* Action Bar */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Total vaccines:</span> {catchUpResult.recommendations.length}
-                    </div>
-                    <Separator orientation="vertical" className="h-4" />
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Action needed:</span> {categories.actionNeeded.length + categories.sharedDecision.length}
-                    </div>
+                <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                    <span className="font-medium text-slate-800">
+                      Total vaccines: {catchUpResult.recommendations.length}
+                    </span>
+                    <span className="font-medium text-slate-800">
+                      Action needed: {categories.actionNeeded.length + categories.sharedDecision.length}
+                    </span>
+                    <span>
+                      Shared decisions: {categories.sharedDecision.length}
+                    </span>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" className="text-xs">
-                      <FileText className="w-3 h-3 mr-1" />
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button variant="outline" size="sm">
+                      <FileText className="w-4 h-4 mr-1" />
                       Export PDF
                     </Button>
-                    <Button variant="outline" size="sm" className="text-xs">
-                      <Download className="w-3 h-3 mr-1" />
+                    <Button variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-1" />
                       Print Summary
                     </Button>
                   </div>
                 </div>
 
                 <Tabs defaultValue={getDefaultTab()} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 mb-6">
-                    <TabsTrigger value="actionNeeded" className="flex items-center space-x-1 text-xs sm:text-sm">
+                  <TabsList className="mb-6 flex w-full flex-wrap gap-2 rounded-2xl bg-slate-50 p-1">
+                    <TabsTrigger
+                      value="actionNeeded"
+                      className="flex flex-1 items-center justify-center space-x-1 text-xs sm:text-sm"
+                    >
                       <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">Action Needed</span>
                       <span className="sm:hidden">🚨</span>
                       <span>({categories.actionNeeded.length})</span>
                     </TabsTrigger>
-                    <TabsTrigger value="complete" className="flex items-center space-x-1 text-xs sm:text-sm">
+                    <TabsTrigger
+                      value="complete"
+                      className="flex flex-1 items-center justify-center space-x-1 text-xs sm:text-sm"
+                    >
                       <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">Complete</span>
                       <span className="sm:hidden">✅</span>
                       <span>({categories.complete.length})</span>
                     </TabsTrigger>
-                    <TabsTrigger value="sharedDecision" className="flex items-center space-x-1 text-xs sm:text-sm">
+                    <TabsTrigger
+                      value="sharedDecision"
+                      className="flex flex-1 items-center justify-center space-x-1 text-xs sm:text-sm"
+                    >
                       <User className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">Shared Decision</span>
                       <span className="sm:hidden">🤝</span>
                       <span>({categories.sharedDecision.length})</span>
                     </TabsTrigger>
                     {/* Risk-Based tab removed per request */}
-                    <TabsTrigger value="international" className="flex items-center space-x-1 text-xs sm:text-sm">
+                    <TabsTrigger
+                      value="international"
+                      className="flex flex-1 items-center justify-center space-x-1 text-xs sm:text-sm"
+                    >
                       <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">International</span>
                       <span className="sm:hidden">🌍</span>
                       <span>({categories.international.length})</span>
                     </TabsTrigger>
-                    <TabsTrigger value="notRecommended" className="flex items-center space-x-1 text-xs sm:text-sm">
+                    <TabsTrigger
+                      value="notRecommended"
+                      className="flex flex-1 items-center justify-center space-x-1 text-xs sm:text-sm"
+                    >
                       <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">Not Recommended</span>
                       <span className="sm:hidden">❌</span>
@@ -1351,7 +1440,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
 
                   <TabsContent value="actionNeeded" className="space-y-4">
                     {categories.actionNeeded.length > 0 ? (
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                         {categories.actionNeeded.map((rec, index) => (
                           <VaccineCard key={index} rec={rec} category="actionNeeded" />
                         ))}
@@ -1366,7 +1455,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
 
                   <TabsContent value="complete" className="space-y-4">
                     {categories.complete.length > 0 ? (
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                         {categories.complete.map((rec, index) => (
                           <VaccineCard key={index} rec={rec} category="complete" />
                         ))}
@@ -1381,7 +1470,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
 
                   <TabsContent value="sharedDecision" className="space-y-4">
                     {categories.sharedDecision.length > 0 ? (
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                         {categories.sharedDecision.map((rec, index) => (
                           <VaccineCard key={index} rec={rec} category="sharedDecision" />
                         ))}
@@ -1398,7 +1487,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
 
                   <TabsContent value="international" className="space-y-4">
                     {categories.international.length > 0 ? (
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                         {categories.international.map((rec, index) => (
                           <VaccineCard key={index} rec={rec} category="international" />
                         ))}
@@ -1413,7 +1502,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
 
                   <TabsContent value="notRecommended" className="space-y-4">
                     {categories.notRecommended.length > 0 ? (
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
                         {categories.notRecommended.map((rec, index) => (
                           <VaccineCard key={index} rec={rec} category="notRecommended" />
                         ))}
@@ -1461,6 +1550,8 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
             />
             <ImportantInformationCard />
           </aside>
+        </div>
+          </div>
         </div>
       </main>
 

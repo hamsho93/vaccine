@@ -21,13 +21,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-const NAV_ITEMS = [
-  { label: "Intake", href: "#intake" },
-  { label: "History", href: "#history" },
-  { label: "Recommendations", href: "#recommendations" },
-  { label: "Resources", href: "#resources" },
-];
-
 export type SummaryItem = {
   label: string;
   value: string;
@@ -227,13 +220,6 @@ export const TopNav = ({ onFeedback }: { onFeedback: () => void }) => (
           <p className="text-sm font-semibold text-slate-900">Clinical Console</p>
         </div>
       </div>
-      <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600">
-        {NAV_ITEMS.map((item) => (
-          <a key={item.href} href={item.href} className="transition-colors hover:text-primary">
-            {item.label}
-          </a>
-        ))}
-      </nav>
       <div className="hidden md:flex items-center gap-3">
         <Button variant="ghost" size="icon" asChild>
           <a href="https://github.com/hamsho93/vaccine" target="_blank" rel="noreferrer" aria-label="GitHub">
@@ -256,10 +242,10 @@ export const TopNav = ({ onFeedback }: { onFeedback: () => void }) => (
             <DrawerTitle className="text-left text-lg font-semibold">Navigate</DrawerTitle>
           </DrawerHeader>
           <div className="mt-6 flex flex-col space-y-4">
-            {NAV_ITEMS.map((item) => (
-              <SheetClose asChild key={item.href}>
-                <a href={item.href} className="text-base font-semibold text-slate-800">
-                  {item.label}
+            {["#overview", "#intake", "#history", "#recommendations", "#resources"].map((href) => (
+              <SheetClose asChild key={href}>
+                <a href={href} className="text-base font-semibold text-slate-800">
+                  {href.replace("#", "").replace(/^\w/, (c) => c.toUpperCase())}
                 </a>
               </SheetClose>
             ))}
@@ -278,5 +264,59 @@ export const TopNav = ({ onFeedback }: { onFeedback: () => void }) => (
       </Sheet>
     </div>
   </header>
+);
+
+export type ProgressNode = {
+  label: string;
+  href: string;
+  status: "complete" | "current" | "upcoming";
+  helper?: string;
+};
+
+export const ProgressRail = ({ nodes }: { nodes: ProgressNode[] }) => (
+  <nav className="hidden xl:block">
+    <div className="relative pl-6 text-sm">
+      <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
+      <ul className="space-y-6">
+        {nodes.map((node, index) => {
+          const isComplete = node.status === "complete";
+          const isCurrent = node.status === "current";
+          return (
+            <li key={node.href}>
+              <a
+                href={node.href}
+                className={cn(
+                  "flex items-start gap-3 rounded-xl p-3 transition-colors",
+                  isCurrent && "bg-blue-50 text-blue-700",
+                  isComplete && "text-slate-500 hover:text-slate-700",
+                  !isComplete && !isCurrent && "text-slate-400 hover:text-slate-600",
+                )}
+              >
+                <div className="relative">
+                  <div
+                    className={cn(
+                      "flex h-4 w-4 items-center justify-center rounded-full border-2",
+                      isComplete && "border-emerald-500 bg-emerald-500",
+                      isCurrent && "border-blue-500",
+                      !isComplete && !isCurrent && "border-slate-300",
+                    )}
+                  >
+                    {isComplete && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                  </div>
+                  {index !== nodes.length - 1 && (
+                    <div className="absolute left-1/2 top-4 h-8 w-px -translate-x-1/2 bg-slate-200" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">{node.label}</p>
+                  {node.helper && <p className="text-xs text-slate-500">{node.helper}</p>}
+                </div>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  </nav>
 );
 
