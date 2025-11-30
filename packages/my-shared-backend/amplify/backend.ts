@@ -22,10 +22,10 @@ backend.vaccineApi.resources.lambda.addToRolePolicy(
   new PolicyStatement({
     actions: ['bedrock:InvokeModel'],
     resources: [
-      // Grant access to all Claude 3.5 Sonnet models in us-east-1
+      // Grant access to Claude 3 Haiku (fast, cost-effective for parsing)
+      'arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-*',
+      // Grant access to Claude 3.5 Sonnet (fallback if needed)
       'arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-*',
-      // Specific model we're using
-      'arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0',
     ],
   })
 );
