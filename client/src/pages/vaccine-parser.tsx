@@ -63,6 +63,7 @@ export default function VaccineParser() {
   const [currentStep, setCurrentStep] = useState(1);
   const [inputMode, setInputMode] = useState<'text' | 'structured'>('text');
   const [structuredVaccines, setStructuredVaccines] = useState<Array<{ name: string; doses: Array<{ date: string; product?: string }> }>>([]);
+  const [activeFilter, setActiveFilter] = useState<string | null>('actionNeeded');
 
   // Helper functions for vaccine categorization - aligned with actual system
   const categorizeVaccines = (recommendations: any[]) => {
@@ -1263,7 +1264,6 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
         {/* Catch-Up Recommendations Section - Full Width */}
         {catchUpResult && (() => {
           const categories = categorizeVaccines(catchUpResult.recommendations);
-          const [activeFilter, setActiveFilter] = useState<string | null>('actionNeeded');
           
           const filterOptions = [
             { key: 'actionNeeded', label: 'Action Needed', count: categories.actionNeeded.length, color: 'red', icon: AlertTriangle },
