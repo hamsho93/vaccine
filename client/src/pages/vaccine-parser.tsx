@@ -10,29 +10,24 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { amplifyVaccineService } from "@/lib/amplify-client";
 import { ParseVaccineHistoryRequest, VaccineHistoryResult, CatchUpRequest, CatchUpResult } from "@shared/schema";
 import { trackVaccineParsed, trackCatchUpGenerated, trackExport, trackSampleDataLoaded, trackError } from "@/lib/heap";
-import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, Clock, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Link as LinkIcon, Plus, Trash2, MessageSquare, Send } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Syringe, Download, FileText, Shield, Info, CheckCircle, AlertCircle, Loader2, User, Calendar, Target, RefreshCw, AlertTriangle, Globe, ShieldCheck, Link as LinkIcon, Plus, Trash2, MessageSquare, Send, Clock } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDistanceToNow } from "date-fns";
 import {
-  NextStepsCard,
   ProcessingBanner,
-  ProgressRail,
   QuickActionBar,
-  StepIndicator,
   SummaryStrip,
   TopNav,
-  type NextStepItem,
   type SummaryItem,
+  type NextStepItem,
   type ProgressNode,
 } from "@/components/vaccine/layout";
-import { ImportantInformationCard } from "@/components/vaccine/important-info-card";
 
 export default function VaccineParser() {
   // CDC note anchors per vaccine (not exhaustive; add as needed)
@@ -788,8 +783,8 @@ export default function VaccineParser() {
       <TopNav onFeedback={() => setFeedbackOpen(true)} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <section id="overview" className="mb-8 space-y-6">
-          <StepIndicator currentStep={currentStep} />
+        {/* Summary Bar - Always visible */}
+        <section id="overview" className="mb-8">
           <SummaryStrip items={summaryItems} />
         </section>
 
@@ -799,14 +794,8 @@ export default function VaccineParser() {
           </div>
         )}
 
-
-        <div className="mt-8 flex flex-col gap-8 xl:flex-row">
-          <div className="hidden xl:block w-[220px] shrink-0">
-            <ProgressRail nodes={progressNodes} />
-          </div>
-          <div className="flex-1">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-          <div className="space-y-8">
+        {/* Full-width single-column layout */}
+        <div className="space-y-8">
         {/* Input Section */}
         <section id="intake">
         <Card className="mb-8 border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-shadow duration-300">
@@ -1137,421 +1126,289 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
           </Button>
         )}
 
-        {/* Results Section */}
+        {/* Results Section - Full Width Card-Based Layout */}
         {result && (
-          <section id="history">
-          <Card className="mb-8 border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-shadow duration-300">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center">
-                  <CheckCircle className="text-emerald-600 mr-2" />
-                  Structured Vaccine History
-                </CardTitle>
-                <div className="flex space-x-2">
-                  {catchUpMutation.isError && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={generateCatchUpRecommendations}
-                      disabled={catchUpMutation.isPending || !result.patientInfo.dateOfBirth}
-                    >
-                      {catchUpMutation.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                      )}
-                      Retry Catch-Up Plan
-                    </Button>
-                  )}
-                  {catchUpMutation.isPending && (
-                    <div className="flex items-center text-sm text-blue-600">
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating recommendations...
-                    </div>
-                  )}
+          <section id="history" className="space-y-6">
+            {/* Header with Patient Info */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-emerald-500 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Vaccine History Parsed</h2>
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mt-1">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      DOB: {result.patientInfo.dateOfBirth ? new Date(result.patientInfo.dateOfBirth).toLocaleDateString() : "Unknown"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <User className="h-4 w-4" />
+                      Age: {result.patientInfo.currentAge || "Unknown"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Syringe className="h-4 w-4" />
+                      {result.patientInfo.totalVaccines} vaccine series
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {catchUpMutation.isError && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => exportData('json')}
+                    onClick={generateCatchUpRecommendations}
+                    disabled={catchUpMutation.isPending || !result.patientInfo.dateOfBirth}
                   >
-                    <Download className="mr-2 h-4 w-4" />
-                    Export JSON
+                    {catchUpMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                    )}
+                    Retry
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => exportData('csv')}
-                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-200"
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Export CSV
-                  </Button>
-                </div>
+                )}
+                <Button variant="outline" size="sm" onClick={() => exportData('json')}>
+                  <Download className="h-4 w-4 mr-1" />
+                  JSON
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => exportData('csv')}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  CSV
+                </Button>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 xl:grid-cols-12">
-                <div className="space-y-6 xl:col-span-8">
-                  <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-6 border border-blue-100 shadow-sm">
-                    <h3 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                      <User className="mr-2 h-4 w-4" />
-                      Patient Information
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <span className="text-sm font-medium text-slate-600">Date of Birth:</span>
-                        <div className="text-sm text-gray-900">
-                          {result.patientInfo.dateOfBirth
-                            ? new Date(result.patientInfo.dateOfBirth).toLocaleDateString()
-                            : "Not determined"}
-                        </div>
+            </div>
+
+            {/* Vaccine Cards Grid - Full Width */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {result.vaccines.map((vaccine, index) => (
+                <div
+                  key={index}
+                  className={`rounded-xl border-2 p-4 transition-all hover:shadow-lg ${
+                    vaccine.seriesStatus === "Complete"
+                      ? "border-emerald-200 bg-emerald-50/50"
+                      : "border-amber-200 bg-amber-50/50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                        vaccine.seriesStatus === "Complete" ? "bg-emerald-500" : "bg-amber-500"
+                      }`}>
+                        {vaccine.seriesStatus === "Complete" ? (
+                          <CheckCircle className="h-4 w-4 text-white" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-white" />
+                        )}
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-slate-600">Current Age:</span>
-                        <div className="text-sm text-gray-900">
-                          {result.patientInfo.currentAge || "Not determined"}
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-sm font-medium text-slate-600">Total Vaccines:</span>
-                        <div className="text-sm text-gray-900">
-                          {result.patientInfo.totalVaccines} vaccine series
-                        </div>
+                        <p className="font-semibold text-gray-900 text-sm">{vaccine.abbreviation || vaccine.standardName}</p>
+                        {vaccine.abbreviation && (
+                          <p className="text-xs text-gray-500">{vaccine.standardName}</p>
+                        )}
                       </div>
                     </div>
+                    <Badge
+                      variant={vaccine.seriesStatus === "Complete" ? "default" : "secondary"}
+                      className={`text-xs ${
+                        vaccine.seriesStatus === "Complete"
+                          ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                          : "bg-amber-100 text-amber-700 border-amber-200"
+                      }`}
+                    >
+                      {vaccine.seriesStatus}
+                    </Badge>
                   </div>
-
-                  <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-                    <p className="text-sm text-blue-800">
-                      <span className="font-semibold">Parsed History:</span> Vaccines already given to the patient based on your input. DTaP/Tdap are the same vaccine series but named differently by age.
-                    </p>
-                  </div>
-                  <div className="overflow-x-auto rounded-xl border border-slate-200">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Vaccine
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Doses Given
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Administration Dates
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Patient Age at Doses
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Series Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {result.vaccines.map((vaccine, index) => (
-                          <tr key={index}>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="text-sm font-medium text-gray-900">{vaccine.standardName}</div>
-                                {vaccine.abbreviation && (
-                                  <div className="text-xs text-slate-600 ml-2">({vaccine.abbreviation})</div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {vaccine.doses.length} dose{vaccine.doses.length !== 1 ? "s" : ""}
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="text-sm text-gray-900 space-y-1">
-                                {vaccine.doses.map((dose, doseIndex) => (
-                                  <div key={doseIndex}>{dose.date}</div>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="text-sm text-gray-900 space-y-1">
-                                {vaccine.doses.map((dose, doseIndex) => (
-                                  <div key={doseIndex}>{dose.patientAge}</div>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <Badge
-                                variant={vaccine.seriesStatus === "Complete" ? "default" : "secondary"}
-                                className={vaccine.seriesStatus === "Complete" ? "bg-emerald-100 text-emerald-800" : ""}
-                              >
-                                {vaccine.seriesStatus}
-                              </Badge>
-                            </td>
-                          </tr>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Doses given</span>
+                      <span className="font-medium text-gray-900">{vaccine.doses.length}</span>
+                    </div>
+                    <div className="border-t border-gray-200 pt-2">
+                      <p className="text-xs text-gray-500 mb-1">Administration dates:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {vaccine.doses.slice(0, 3).map((dose, doseIndex) => (
+                          <span key={doseIndex} className="text-xs bg-white px-2 py-0.5 rounded border border-gray-200">
+                            {dose.date}
+                          </span>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="space-y-4 xl:col-span-4">
-                  <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p className="text-sm font-semibold text-slate-900">Snapshot</p>
-                    <div className="mt-3 space-y-2 text-sm text-slate-600">
-                      <div className="flex items-center justify-between">
-                        <span>Series complete</span>
-                        <span className="font-semibold text-emerald-600">
-                          {result.vaccines.filter((v) => v.seriesStatus === "Complete").length}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Doses captured</span>
-                        <span className="font-semibold text-slate-900">
-                          {result.vaccines.reduce((acc, v) => acc + v.doses.length, 0)}
-                        </span>
+                        {vaccine.doses.length > 3 && (
+                          <span className="text-xs text-gray-400">+{vaccine.doses.length - 3} more</span>
+                        )}
                       </div>
                     </div>
                   </div>
-
-                  {result.processingNotes.length > 0 && (
-                    <Alert className="bg-amber-50 border-amber-200 text-amber-900">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Processing Notes</AlertTitle>
-                      <AlertDescription>
-                        <ul className="list-disc pl-5 space-y-1 mt-2">
-                          {result.processingNotes.map((note, index) => (
-                            <li key={index}>{note}</li>
-                          ))}
-                        </ul>
-                      </AlertDescription>
-                    </Alert>
-                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              ))}
+            </div>
+
+            {/* Processing Notes - Collapsible */}
+            {result.processingNotes.length > 0 && (
+              <Alert className="bg-blue-50 border-blue-200">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertTitle className="text-blue-900">Processing Notes</AlertTitle>
+                <AlertDescription className="text-blue-800">
+                  <ul className="list-disc pl-5 space-y-1 mt-2 text-sm">
+                    {result.processingNotes.map((note, index) => (
+                      <li key={index}>{note}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
           </section>
         )}
 
-        {/* Special Conditions Section removed per request */}
-
-        {/* Enhanced Catch-Up Recommendations Section */}
+        {/* Catch-Up Recommendations Section - Full Width */}
         {catchUpResult && (() => {
           const categories = categorizeVaccines(catchUpResult.recommendations);
+          const [activeFilter, setActiveFilter] = useState<string | null>('actionNeeded');
           
-          // Smart default tab selection - show most important category first
-          const getDefaultTab = () => {
-            if (categories.actionNeeded.length > 0) return 'actionNeeded';
-            if (categories.sharedDecision.length > 0) return 'sharedDecision';
-            if (categories.international.length > 0) return 'international';
-            if (categories.complete.length > 0) return 'complete';
-            return 'notRecommended';
+          const filterOptions = [
+            { key: 'actionNeeded', label: 'Action Needed', count: categories.actionNeeded.length, color: 'red', icon: AlertTriangle },
+            { key: 'complete', label: 'Complete', count: categories.complete.length, color: 'emerald', icon: ShieldCheck },
+            { key: 'sharedDecision', label: 'Shared Decision', count: categories.sharedDecision.length, color: 'blue', icon: User },
+            { key: 'international', label: 'International', count: categories.international.length, color: 'cyan', icon: Globe },
+            { key: 'notRecommended', label: 'Not Recommended', count: categories.notRecommended.length, color: 'gray', icon: AlertCircle },
+          ];
+          
+          const getFilteredRecs = () => {
+            if (!activeFilter) return catchUpResult.recommendations;
+            return categories[activeFilter as keyof typeof categories] || [];
           };
           
           return (
-            <section id="recommendations">
-            <Card className="mb-8 border-0 shadow-xl bg-white/90 backdrop-blur-sm hover:shadow-2xl transition-shadow duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Target className="text-blue-600 mr-2" />
-                  CDC Catch-Up Immunization Recommendations
-                </CardTitle>
-                <p className="text-sm text-slate-600">
-                  Based on patient age ({catchUpResult.patientAge}) and current vaccine history
-                </p>
-                <div className="mt-3 p-3 bg-amber-50 rounded-lg">
-                  <p className="text-sm text-amber-800">
-                    <span className="font-semibold">What&apos;s Needed Next:</span> These are vaccines the patient still needs based on their age and history. DTaP (for children) and Tdap (for adolescents/adults) are the same vaccine series.
-                  </p>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                {/* Action Bar */}
-                <div className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                    <span className="font-medium text-slate-800">
-                      Total vaccines: {catchUpResult.recommendations.length}
-                    </span>
-                    <span className="font-medium text-slate-800">
-                      Action needed: {categories.actionNeeded.length + categories.sharedDecision.length}
-                    </span>
-                    <span>
-                      Shared decisions: {categories.sharedDecision.length}
-                    </span>
+            <section id="recommendations" className="space-y-6">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center">
+                    <Target className="h-6 w-6 text-white" />
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <FileText className="w-4 h-4 mr-1" />
-                      Export PDF
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="w-4 h-4 mr-1" />
-                      Print Summary
-                    </Button>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Catch-Up Recommendations</h2>
+                    <p className="text-sm text-gray-600">
+                      Patient age: {catchUpResult.patientAge} · {catchUpResult.recommendations.length} vaccines reviewed
+                    </p>
                   </div>
                 </div>
-
-                <Tabs defaultValue={getDefaultTab()} className="w-full">
-                  <TabsList className="mb-6 flex w-full flex-wrap gap-2 rounded-2xl bg-slate-50 p-1">
-                    <TabsTrigger
-                      value="actionNeeded"
-                      className="flex flex-1 items-center justify-center space-x-1 text-xs sm:text-sm"
-                    >
-                      <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Action Needed</span>
-                      <span className="sm:hidden">🚨</span>
-                      <span>({categories.actionNeeded.length})</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="complete"
-                      className="flex flex-1 items-center justify-center space-x-1 text-xs sm:text-sm"
-                    >
-                      <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Complete</span>
-                      <span className="sm:hidden">✅</span>
-                      <span>({categories.complete.length})</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="sharedDecision"
-                      className="flex flex-1 items-center justify-center space-x-1 text-xs sm:text-sm"
-                    >
-                      <User className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Shared Decision</span>
-                      <span className="sm:hidden">🤝</span>
-                      <span>({categories.sharedDecision.length})</span>
-                    </TabsTrigger>
-                    {/* Risk-Based tab removed per request */}
-                    <TabsTrigger
-                      value="international"
-                      className="flex flex-1 items-center justify-center space-x-1 text-xs sm:text-sm"
-                    >
-                      <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">International</span>
-                      <span className="sm:hidden">🌍</span>
-                      <span>({categories.international.length})</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="notRecommended"
-                      className="flex flex-1 items-center justify-center space-x-1 text-xs sm:text-sm"
-                    >
-                      <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="hidden sm:inline">Not Recommended</span>
-                      <span className="sm:hidden">❌</span>
-                      <span>({categories.notRecommended.length})</span>
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="actionNeeded" className="space-y-4">
-                    {categories.actionNeeded.length > 0 ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-                        {categories.actionNeeded.map((rec, index) => (
-                          <VaccineCard key={index} rec={rec} category="actionNeeded" />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
-                        <p>No vaccinations need immediate action. Great job!</p>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="complete" className="space-y-4">
-                    {categories.complete.length > 0 ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-                        {categories.complete.map((rec, index) => (
-                          <VaccineCard key={index} rec={rec} category="complete" />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-orange-500" />
-                        <p>No completed vaccine series yet.</p>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="sharedDecision" className="space-y-4">
-                    {categories.sharedDecision.length > 0 ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-                        {categories.sharedDecision.map((rec, index) => (
-                          <VaccineCard key={index} rec={rec} category="sharedDecision" />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <User className="w-12 h-12 mx-auto mb-3 text-blue-500" />
-                        <p>No vaccines requiring shared clinical decision-making.</p>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  {/* Risk-Based content removed per request */}
-
-                  <TabsContent value="international" className="space-y-4">
-                    {categories.international.length > 0 ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-                        {categories.international.map((rec, index) => (
-                          <VaccineCard key={index} rec={rec} category="international" />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <Globe className="w-12 h-12 mx-auto mb-3 text-cyan-500" />
-                        <p>No international or travel-related vaccines to consider.</p>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="notRecommended" className="space-y-4">
-                    {categories.notRecommended.length > 0 ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
-                        {categories.notRecommended.map((rec, index) => (
-                          <VaccineCard key={index} rec={rec} category="notRecommended" />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
-                        <p>No contraindicated vaccines. Good safety profile!</p>
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
-
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <div className="flex items-center mb-2">
-                    <Info className="text-blue-600 mr-2 h-4 w-4" />
-                    <span className="font-medium text-blue-900">Important Catch-Up Guidelines</span>
-                  </div>
-                  <ul className="text-sm text-blue-800 space-y-1">
-                    <li>• Minimum intervals between doses must be maintained</li>
-                    <li>• Some vaccines have maximum age limits or special considerations</li>
-                    <li>• Always consult CDC catch-up schedule for complex cases</li>
-                    <li>• Consider individual patient factors and contraindications</li>
-                  </ul>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <FileText className="h-4 w-4 mr-1" />
+                    PDF
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-1" />
+                    Print
+                  </Button>
                 </div>
+              </div>
 
-                <div className="mt-4 text-xs text-slate-600 flex items-center justify-between">
-                  <span>CDC Guidelines Version: {catchUpResult.cdcVersion}</span>
+              {/* Filter Pills */}
+              <div className="flex flex-wrap gap-2">
+                {filterOptions.map((filter) => {
+                  const Icon = filter.icon;
+                  const isActive = activeFilter === filter.key;
+                  return (
+                    <button
+                      key={filter.key}
+                      onClick={() => setActiveFilter(isActive ? null : filter.key)}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        isActive
+                          ? filter.color === 'red' ? 'bg-red-100 text-red-800 ring-2 ring-red-500'
+                          : filter.color === 'emerald' ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500'
+                          : filter.color === 'blue' ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-500'
+                          : filter.color === 'cyan' ? 'bg-cyan-100 text-cyan-800 ring-2 ring-cyan-500'
+                          : 'bg-gray-100 text-gray-800 ring-2 ring-gray-500'
+                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {filter.label}
+                      <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
+                        isActive ? 'bg-white/50' : 'bg-gray-100'
+                      }`}>
+                        {filter.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Recommendation Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getFilteredRecs().length > 0 ? (
+                  getFilteredRecs().map((rec, index) => (
+                    <VaccineCard key={index} rec={rec} category={activeFilter || 'actionNeeded'} />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-12 text-gray-500">
+                    <ShieldCheck className="w-16 h-16 mx-auto mb-4 text-emerald-400" />
+                    <p className="text-lg font-medium">No vaccines in this category</p>
+                    <p className="text-sm">Try selecting a different filter above</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Guidelines Footer */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Info className="h-4 w-4 text-slate-600" />
+                  <span className="font-medium text-slate-700 text-sm">Important Guidelines</span>
+                </div>
+                <ul className="text-xs text-slate-600 space-y-1">
+                  <li>• Minimum intervals between doses must be maintained</li>
+                  <li>• Always consult CDC catch-up schedule for complex cases</li>
+                  <li>• Consider individual patient factors and contraindications</li>
+                </ul>
+                <div className="mt-3 pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+                  <span>CDC Guidelines: {catchUpResult.cdcVersion}</span>
                   <span>Generated: {new Date(catchUpResult.processedAt).toLocaleString()}</span>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
             </section>
           );
         })()}
 
-          </div>
-
-          <aside className="space-y-6" id="resources">
-            <NextStepsCard
-              items={nextStepItems}
-              hasResult={Boolean(result)}
-              onExport={exportData}
-              onFeedback={() => setFeedbackOpen(true)}
-            />
-            <ImportantInformationCard />
-          </aside>
-        </div>
-          </div>
+        {/* Resources Section - Collapsible at Bottom */}
+        {(result || catchUpResult) && (
+          <section id="resources" className="mt-8">
+            <details className="group">
+              <summary className="flex items-center justify-between cursor-pointer p-4 bg-slate-50 rounded-xl border border-slate-200 hover:bg-slate-100 transition-colors">
+                <div className="flex items-center gap-3">
+                  <Shield className="h-5 w-5 text-slate-600" />
+                  <span className="font-medium text-slate-700">Privacy & Resources</span>
+                </div>
+                <span className="text-sm text-slate-500 group-open:hidden">Click to expand</span>
+              </summary>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="p-4 bg-white rounded-xl border border-slate-200">
+                  <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-emerald-600" />
+                    Data Privacy
+                  </h4>
+                  <ul className="text-sm text-slate-600 space-y-1">
+                    <li>• All processing via secure API</li>
+                    <li>• No patient data stored</li>
+                    <li>• Session-based only</li>
+                  </ul>
+                </div>
+                <div className="p-4 bg-white rounded-xl border border-slate-200">
+                  <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+                    <Syringe className="h-4 w-4 text-blue-600" />
+                    Clinical Guidelines
+                  </h4>
+                  <ul className="text-sm text-slate-600 space-y-1">
+                    <li>• Verify against original records</li>
+                    <li>• Use with CDC guidelines</li>
+                    <li>• Consider contraindications</li>
+                  </ul>
+                </div>
+              </div>
+            </details>
+          </section>
+        )}
         </div>
       </main>
 
@@ -1655,3 +1512,4 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
     </div>
   );
 }
+

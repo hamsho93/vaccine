@@ -2,14 +2,14 @@ import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedroc
 import { VaccineHistoryResult } from "../../shared/schema";
 import { vaccineNameMapper } from "./vaccine-name-mapper";
 
-// Use Claude 3.5 Sonnet on AWS Bedrock for structured data extraction
-// Token budget and prompt trimmed for faster response times
+// Use Claude 3 Haiku on AWS Bedrock for fast structured data extraction
+// Haiku is 3-5x faster than Sonnet with comparable accuracy for parsing tasks
 const bedrockClient = new BedrockRuntimeClient({ 
   region: process.env.AWS_REGION || "us-east-1"
 });
 
-// Use Claude 3.5 Sonnet - reliable parsing with optimized prompt
-const CLAUDE_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0";
+// Use Claude 3 Haiku - optimized for speed while maintaining quality
+const CLAUDE_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0";
 
 export class VaccineParserService {
   async parseVaccineHistory(rawData: string, birthDate?: string): Promise<VaccineHistoryResult> {

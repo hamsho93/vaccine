@@ -14,7 +14,7 @@ We take security seriously. If you discover a security vulnerability, please fol
 
 **DO NOT** create a public GitHub issue for security vulnerabilities.
 
-Instead, please email: [your-email@example.com]
+Instead, please email: mahmoudhamsho@gmail.com
 
 Include:
 - Description of the vulnerability
