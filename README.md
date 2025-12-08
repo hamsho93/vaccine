@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/node-20.x-brightgreen)](https://nodejs.org/)
-[![CDC 2025.1](https://img.shields.io/badge/CDC-2025.1-blue)](https://www.cdc.gov/vaccines/hcp/imz-schedules/child-adolescent-notes.html)
+[![CDC 2025.2](https://img.shields.io/badge/CDC-2025.2-blue)](https://www.cdc.gov/vaccines/hcp/imz-schedules/child-adolescent-notes.html)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 Paste unstructured vaccine records → Get structured data + CDC catch-up recommendations in one click.

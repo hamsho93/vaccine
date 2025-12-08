@@ -1422,7 +1422,7 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                 Vaccine History Parser v1.0 | Medical Professional Tool
               </div>
               <div className="text-sm text-slate-600">
-                Based on CDC Guidelines 2025.1 | For healthcare professionals only
+                Based on CDC Guidelines 2025.2 (Oct 2025) | For healthcare professionals only
               </div>
             </div>
             <div className="text-center text-sm text-slate-500 border-t border-gray-100 pt-3">

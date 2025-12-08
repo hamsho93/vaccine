@@ -56,7 +56,7 @@ VaxRecord is now open source under the MIT License!
 
 ### CDC Guideline Alignment
 
-Fully implements CDC Child and Adolescent Immunization Schedule 2025.1 (Updated July 2, 2025):
+Fully implements CDC Child and Adolescent Immunization Schedule 2025.2 (Updated October 7, 2025):
 
 - DTaP/Tdap: Dose 5 exception, adolescent booster logic
 - MenACWY: Single dose at 16+, college catch-up through age 21

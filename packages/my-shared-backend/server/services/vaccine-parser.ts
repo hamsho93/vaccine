@@ -21,7 +21,7 @@ Input:
 ${rawData}
 
 Return JSON:
-{"patientInfo":{"dateOfBirth":"${birthDate || 'YYYY-MM-DD'}","currentAge":"X years Y months","totalVaccines":N},"vaccines":[{"vaccineName":"full name","standardName":"CDC name","abbreviation":"abbrev","doses":[{"date":"YYYY-MM-DD","patientAge":"age"}],"seriesStatus":"Complete|Incomplete|Unknown"}],"processingNotes":["notes"],"cdcVersion":"2025.1","processedAt":"${new Date().toISOString()}"}
+{"patientInfo":{"dateOfBirth":"${birthDate || 'YYYY-MM-DD'}","currentAge":"X years Y months","totalVaccines":N},"vaccines":[{"vaccineName":"full name","standardName":"CDC name","abbreviation":"abbrev","doses":[{"date":"YYYY-MM-DD","patientAge":"age"}],"seriesStatus":"Complete|Incomplete|Unknown"}],"processingNotes":["notes"],"cdcVersion":"2025.2","processedAt":"${new Date().toISOString()}"}
 
 Rules: dates as YYYY-MM-DD, CDC nomenclature (DTaP, MMR, etc.), calculate current age from birth date as of ${currentDate}.`;
 
@@ -86,7 +86,7 @@ Rules: dates as YYYY-MM-DD, CDC nomenclature (DTaP, MMR, etc.), calculate curren
       
       // Ensure timestamp is properly formatted
       result.processedAt = new Date().toISOString();
-      result.cdcVersion = "2025.1";
+      result.cdcVersion = "2025.2";
       
       return result;
 

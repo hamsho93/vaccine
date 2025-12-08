@@ -523,7 +523,7 @@ export class VaccineCatchUpService {
       recommendations: recommendations
         .filter(r => r && r.vaccineName) // Remove undefined recommendations
         .sort((a, b) => a.vaccineName.localeCompare(b.vaccineName)),
-      cdcVersion: "2025.1",
+      cdcVersion: "2025.2",
       processedAt: new Date().toISOString()
     };
   }

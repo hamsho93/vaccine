@@ -21,7 +21,7 @@ describe('Zod schemas', () => {
         },
       ],
       processingNotes: [],
-      cdcVersion: '2025.1',
+      cdcVersion: '2025.2',
       processedAt: nowIso,
     };
     const parsed = VaccineHistoryResult.parse(input);

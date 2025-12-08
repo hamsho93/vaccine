@@ -103,7 +103,7 @@ I've created an open source tool that might help with vaccine catch-up schedulin
 Patients transferring from another provider, incomplete records, refugees/immigrants, or anyone needing catch-up evaluation.
 
 **CDC compliance:**
-- Based on Child & Adolescent Immunization Schedule 2025.1
+- Based on Child & Adolescent Immunization Schedule 2025.2 (Oct 2025)
 - 8 automated tests validate CDC rules
 - Clear documentation of guideline alignment
 - Links to specific CDC notes for each vaccine
