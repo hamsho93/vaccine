@@ -52,7 +52,13 @@ For production deployments:
 The following development-only dependencies have known advisories (not affecting production):
 
 - **esbuild** (moderate): Development server vulnerability - does not affect Lambda runtime
-- Mitigations: Only run dev server on localhost; never expose development server to public internet
+- **js-yaml** (moderate): Prototype pollution in merge - run `npm audit fix` to update
+- **glob** (high): CLI command injection - dev tooling only, not exploitable in production
+
+**Mitigations:**
+- Only run dev server on localhost; never expose development server to public internet
+- Production deployments use AWS Lambda which does not include dev dependencies
+- Run `npm audit fix` periodically to update vulnerable dev dependencies
 
 ### HIPAA Compliance Notes
 
