@@ -4,7 +4,7 @@ This document explains how VaxRecord implements CDC Child and Adolescent Immuniz
 
 ## CDC Guidelines Version
 
-**Current:** CDC 2025.2 (Updated: October 7, 2025)
+**Current:** CDC 2025.2 (Updated: December 8, 2025)
 
 **Source:** [CDC Child and Adolescent Immunization Schedule Notes](https://www.cdc.gov/vaccines/hcp/imz-schedules/child-adolescent-notes.html)
 
