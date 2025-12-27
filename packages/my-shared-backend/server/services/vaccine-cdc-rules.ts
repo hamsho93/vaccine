@@ -517,9 +517,29 @@ export const cdcVaccineRules: Record<string, CDCVaccineRules> = {
   }
 };
 
+// Map internal vaccine codes to CDC rules keys
+// This ensures getVaccineRules works with both internal codes and CDC rule keys
+const INTERNAL_TO_CDC_KEY: Record<string, string> = {
+  'hib': 'haemophilus_influenzae_type_b',
+  'pneumococcal': 'pneumococcal_conjugate',
+  'polio': 'inactivated_poliovirus',
+  'ipv': 'inactivated_poliovirus',
+  'mmr': 'measles_mumps_rubella',
+  'hpv': 'human_papillomavirus',
+  'dtap_tdap': 'dtap', // DTaP rules apply; Tdap has separate entry
+};
+
 // Helper to get appropriate vaccine rules based on normalized name
 export function getVaccineRules(normalizedVaccineName: string): CDCVaccineRules | undefined {
-  return cdcVaccineRules[normalizedVaccineName];
+  // First try direct lookup, then try mapped key
+  const directResult = cdcVaccineRules[normalizedVaccineName];
+  if (directResult) return directResult;
+  
+  // Try mapped key for internal codes
+  const mappedKey = INTERNAL_TO_CDC_KEY[normalizedVaccineName];
+  if (mappedKey) return cdcVaccineRules[mappedKey];
+  
+  return undefined;
 }
 
 // Check if patient has contraindications

@@ -261,6 +261,104 @@ export const VACCINE_MAPPINGS: VaccineMappingEntry[] = [
   }
 ];
 
+// Key tokens for fuzzy/fallback matching when exact match fails
+// Order matters: more specific tokens should come first
+const KEY_TOKENS: Array<[string, string]> = [
+  // Pneumococcal - the key fix for the doctor's bug report
+  ['pneumococcal conjugate', 'pneumococcal'],
+  ['pneumococcal polysaccharide', 'pneumococcal'],
+  ['pneumococcal', 'pneumococcal'],
+  ['pcv', 'pneumococcal'],
+  ['prevnar', 'pneumococcal'],
+  ['pneumovax', 'pneumococcal'],
+  
+  // Hepatitis - must check "hepatitis b" before just "hepatitis"
+  ['hepatitis b', 'hepatitis_b'],
+  ['hep b', 'hepatitis_b'],
+  ['hepb', 'hepatitis_b'],
+  ['hepatitis a', 'hepatitis_a'],
+  ['hep a', 'hepatitis_a'],
+  ['hepa', 'hepatitis_a'],
+  
+  // Polio variants
+  ['poliovirus', 'polio'],
+  ['polio', 'polio'],
+  ['ipv', 'polio'],
+  
+  // Rotavirus
+  ['rotavirus', 'rotavirus'],
+  ['rotarix', 'rotavirus'],
+  ['rotateq', 'rotavirus'],
+  
+  // Varicella
+  ['varicella', 'varicella'],
+  ['chickenpox', 'varicella'],
+  ['chicken pox', 'varicella'],
+  
+  // MMR
+  ['mmr', 'mmr'],
+  ['measles', 'mmr'],
+  ['mumps', 'mmr'],
+  ['rubella', 'mmr'],
+  
+  // DTaP/Tdap - check more specific patterns first
+  ['dtap', 'dtap_tdap'],
+  ['tdap', 'dtap_tdap'],
+  ['diphtheria', 'dtap_tdap'],
+  ['pertussis', 'dtap_tdap'],
+  
+  // Hib
+  ['haemophilus', 'hib'],
+  ['hib', 'hib'],
+  
+  // Influenza
+  ['influenza', 'influenza'],
+  ['flu', 'influenza'],
+  
+  // HPV
+  ['papillomavirus', 'hpv'],
+  ['hpv', 'hpv'],
+  ['gardasil', 'hpv'],
+  
+  // Meningococcal - check specific types first (order matters!)
+  // MenB patterns must come before generic "meningococcal"
+  ['meningococcal_b', 'meningococcal_b'],  // Internal code format
+  ['meningococcal b', 'meningococcal_b'],
+  ['meningococcal-b', 'meningococcal_b'],
+  ['menb', 'meningococcal_b'],
+  ['bexsero', 'meningococcal_b'],
+  ['trumenba', 'meningococcal_b'],
+  ['serogroup b', 'meningococcal_b'],
+  // MenACWY patterns
+  ['meningococcal_acwy', 'meningococcal_acwy'],  // Internal code format
+  ['meningococcal acwy', 'meningococcal_acwy'],
+  ['meningococcal-acwy', 'meningococcal_acwy'],
+  ['menacwy', 'meningococcal_acwy'],
+  ['menactra', 'meningococcal_acwy'],
+  ['menveo', 'meningococcal_acwy'],
+  // Generic meningococcal defaults to ACWY (must be last!)
+  ['meningococcal', 'meningococcal_acwy'],
+  
+  // COVID
+  ['covid', 'covid19'],
+  ['coronavirus', 'covid19'],
+  ['sars-cov', 'covid19'],
+  
+  // RSV
+  ['rsv', 'rsv'],
+  ['respiratory syncytial', 'rsv'],
+  
+  // Dengue
+  ['dengue', 'dengue'],
+  ['dengvaxia', 'dengue'],
+  
+  // Travel vaccines
+  ['japanese encephalitis', 'japanese_encephalitis'],
+  ['yellow fever', 'yellow_fever'],
+  ['typhoid', 'typhoid'],
+  ['cholera', 'cholera'],
+];
+
 export class VaccineNameMapper {
   private static instance: VaccineNameMapper;
   private nameToInternalMap: Map<string, string> = new Map();
@@ -309,11 +407,32 @@ export class VaccineNameMapper {
     }
   }
   
+  // Fallback token-based matching for fuzzy recognition
+  private tokenMatch(normalized: string): string | null {
+    for (const [token, internalCode] of KEY_TOKENS) {
+      if (normalized.includes(token)) {
+        return internalCode;
+      }
+    }
+    return null;
+  }
+  
   // Convert any vaccine name to internal code
+  // Uses 3-tier matching: exact -> token-based -> original
   toInternal(name: string): string {
     if (!name) return name;
     const normalized = name.toLowerCase().trim();
-    return this.nameToInternalMap.get(normalized) || normalized;
+    
+    // Tier 1: Exact match from the mapping tables
+    const exactMatch = this.nameToInternalMap.get(normalized);
+    if (exactMatch) return exactMatch;
+    
+    // Tier 2: Token-based fuzzy matching
+    const tokenMatch = this.tokenMatch(normalized);
+    if (tokenMatch) return tokenMatch;
+    
+    // Tier 3: Return original (unrecognized)
+    return normalized;
   }
   
   // Convert internal code to display name
@@ -332,10 +451,13 @@ export class VaccineNameMapper {
     return this.internalToEntryMap.get(internalCode);
   }
   
-  // Check if a vaccine name is recognized
+  // Check if a vaccine name is recognized (exact or token-based)
   isRecognized(name: string): boolean {
     const normalized = name.toLowerCase().trim();
-    return this.nameToInternalMap.has(normalized);
+    // Check exact match first
+    if (this.nameToInternalMap.has(normalized)) return true;
+    // Check token-based match
+    return this.tokenMatch(normalized) !== null;
   }
   
   // Get the display name for age-specific vaccines

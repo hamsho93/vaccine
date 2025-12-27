@@ -1,5 +1,6 @@
 import { VaccineDoseInfo, getAgeInYears } from '../vaccine-catchup';
 import type { VaccineRecommendation } from '../../../shared/schema';
+import { SpecialConditions } from '../vaccine-cdc-rules';
 
 export function dengueRecommendation(
   normalizedName: string,
@@ -8,8 +9,8 @@ export function dengueRecommendation(
   validDoses: VaccineDoseInfo[],
   numDoses: number,
   sortedDoses: VaccineDoseInfo[],
-  specialConditions?: any,
-  immunityEvidence?: any
+  specialConditions: SpecialConditions,
+  immunityEvidence?: Record<string, boolean>
 ): VaccineRecommendation | null {
   let seriesComplete = false;
   let recommendation = '';
