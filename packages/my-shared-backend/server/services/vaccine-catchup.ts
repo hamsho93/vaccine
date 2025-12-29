@@ -518,10 +518,25 @@ export class VaccineCatchUpService {
       }
     }
 
+    // Layer 2 Safety Net: Deduplicate recommendations by normalized vaccine name
+    // This catches any edge cases where the same vaccine appears twice with different names
+    const seenNormalizedNames = new Set<string>();
+    const deduplicatedRecommendations = recommendations.filter(rec => {
+      if (!rec || !rec.vaccineName) return false;
+      
+      const normalizedName = this.normalizeVaccineName(rec.vaccineName);
+      if (seenNormalizedNames.has(normalizedName)) {
+        // Log for debugging - helps identify normalization gaps in development
+        console.warn(`[VaccineCatchUp] Duplicate vaccine filtered: "${rec.vaccineName}" -> "${normalizedName}"`);
+        return false;
+      }
+      seenNormalizedNames.add(normalizedName);
+      return true;
+    });
+
     return {
       patientAge,
-      recommendations: recommendations
-        .filter(r => r && r.vaccineName) // Remove undefined recommendations
+      recommendations: deduplicatedRecommendations
         .sort((a, b) => a.vaccineName.localeCompare(b.vaccineName)),
       cdcVersion: "2025.2",
       processedAt: new Date().toISOString()
