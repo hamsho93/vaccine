@@ -14,7 +14,7 @@ export function pneumococcalRecommendation(
 ): VaccineRecommendation {
   let seriesComplete = false;
   let recommendation = '';
-  const nextDoseDate: string | undefined = undefined;
+  let nextDoseDate: string | undefined = undefined;
   const notes: string[] = [];
   // Pneumococcal vaccination logic based on CDC guidelines
   const currentAgeYears = Math.floor(getAgeInDays(birthDate, currentDate) / 365.25);
@@ -63,7 +63,37 @@ export function pneumococcalRecommendation(
       seriesComplete = true;
     } else {
       const nextDoseNumber = numDoses + 1;
-      recommendation = `Give PCV dose ${nextDoseNumber}`;
+      
+      // Calculate next dose date based on age and intervals
+      let earliestNextDose: Date;
+      
+      if (numDoses === 0) {
+        // First dose: minimum age 6 weeks (42 days)
+        earliestNextDose = addDays(birthDate, 42);
+      } else if (numDoses === 1 || numDoses === 2) {
+        // Doses 2 and 3: minimum 4 weeks (28 days) after previous dose
+        const lastDoseDate = validDoses[numDoses - 1].date;
+        const minIntervalDate = addDays(lastDoseDate, 28);
+        // Recommended ages: 2, 4, 6 months
+        const recommendedAgeInMonths = [2, 4, 6][numDoses];
+        const recommendedAgeDate = addDays(birthDate, recommendedAgeInMonths * 30.44);
+        earliestNextDose = new Date(Math.max(minIntervalDate.getTime(), recommendedAgeDate.getTime()));
+      } else {
+        // Dose 4 (booster): minimum 8 weeks (56 days) after dose 3, recommended at 12-15 months
+        const dose3Date = validDoses[2].date;
+        const minIntervalDate = addDays(dose3Date, 56);
+        const recommendedAgeDate = addDays(birthDate, 12 * 30.44);
+        earliestNextDose = new Date(Math.max(minIntervalDate.getTime(), recommendedAgeDate.getTime()));
+      }
+      
+      // Check if child is already old enough for the next dose
+      if (currentDate.getTime() >= earliestNextDose.getTime()) {
+        recommendation = `Give PCV dose ${nextDoseNumber} now`;
+      } else {
+        recommendation = `Give PCV dose ${nextDoseNumber} on or after ${formatDate(earliestNextDose)}`;
+        nextDoseDate = formatDate(earliestNextDose);
+      }
+      
       notes.push('PCV series: 2, 4, 6, 12-15 months');
     }
   }
