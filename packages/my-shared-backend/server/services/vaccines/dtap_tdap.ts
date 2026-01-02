@@ -174,8 +174,38 @@ export function dtapTdapRecommendation(
         }
       }
     } else {
+      // Doses 1-3: Calculate next dose date based on CDC schedule
       const nextDoseNumber = numDoses + 1;
-      recommendation = `Give DTaP dose ${nextDoseNumber}`;
+      const requiredAges = [2, 4, 6, 15]; // months for doses 1-4
+      
+      // Determine earliest eligible date for next dose
+      let earliestNextDose: Date;
+      
+      if (numDoses === 0) {
+        // First dose: minimum age 6 weeks (42 days)
+        earliestNextDose = addDays(birthDate, 42);
+      } else if (numDoses === 1 || numDoses === 2) {
+        // Doses 2 and 3: minimum 4 weeks (28 days) after previous dose
+        const lastDoseDate = validDoses[numDoses - 1].date;
+        const minIntervalDate = addDays(lastDoseDate, 28);
+        const recommendedAgeDate = addDays(birthDate, requiredAges[numDoses] * 30.44);
+        earliestNextDose = new Date(Math.max(minIntervalDate.getTime(), recommendedAgeDate.getTime()));
+      } else {
+        // Dose 4: minimum 6 months (168 days) after dose 3, recommended at 15-18 months
+        const dose3Date = validDoses[2].date;
+        const minIntervalDate = addDays(dose3Date, 168);
+        const recommendedAgeDate = addDays(birthDate, 15 * 30.44);
+        earliestNextDose = new Date(Math.max(minIntervalDate.getTime(), recommendedAgeDate.getTime()));
+      }
+      
+      // Check if child is already old enough for the next dose
+      if (currentDate.getTime() >= earliestNextDose.getTime()) {
+        recommendation = `Give DTaP dose ${nextDoseNumber} now`;
+      } else {
+        recommendation = `Give DTaP dose ${nextDoseNumber} on or after ${formatDate(earliestNextDose)}`;
+        nextDoseDate = formatDate(earliestNextDose);
+      }
+      
       notes.push(`DTaP series: ${numDoses} of ${dtapTotalDoses} doses completed`);
       notes.push('Schedule: 2, 4, 6, 15-18 months, 4-6 years');
     }

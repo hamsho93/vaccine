@@ -69,6 +69,7 @@ export default function VaccineParser() {
   const categorizeVaccines = (recommendations: any[]) => {
     const categories = {
       actionNeeded: [] as any[],
+      upcoming: [] as any[],
       complete: [] as any[],
       sharedDecision: [] as any[],
       riskBased: [] as any[],
@@ -76,8 +77,11 @@ export default function VaccineParser() {
       notRecommended: [] as any[]
     };
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+
     recommendations.forEach(rec => {
-      // Categorize primarily by decisionType, then by seriesComplete
+      // Categorize primarily by decisionType, then by seriesComplete and timing
       switch (rec.decisionType) {
         case 'international-advisory':
           categories.international.push(rec);
@@ -95,11 +99,26 @@ export default function VaccineParser() {
           categories.notRecommended.push(rec); // Group with not-recommended
           break;
         default:
-          // For routine and catch-up, categorize by completion status
+          // For routine and catch-up, categorize by completion status and timing
           if (rec.seriesComplete) {
             categories.complete.push(rec);
           } else {
-            categories.actionNeeded.push(rec);
+            // Check if vaccine has a future due date (upcoming) or is due now/overdue (action needed)
+            if (rec.nextDoseDate) {
+              const nextDoseDate = new Date(rec.nextDoseDate);
+              nextDoseDate.setHours(0, 0, 0, 0);
+              
+              if (nextDoseDate > today) {
+                // Future date - this is scheduled/upcoming
+                categories.upcoming.push(rec);
+              } else {
+                // Today or past - action needed
+                categories.actionNeeded.push(rec);
+              }
+            } else {
+              // No specific date but incomplete - action needed
+              categories.actionNeeded.push(rec);
+            }
           }
           break;
       }
@@ -111,6 +130,7 @@ export default function VaccineParser() {
   const getPriorityIcon = (category: string) => {
     switch (category) {
       case 'actionNeeded': return AlertTriangle;
+      case 'upcoming': return Calendar;
       case 'complete': return ShieldCheck;
       case 'sharedDecision': return User;
       case 'riskBased': return AlertCircle;
@@ -123,8 +143,9 @@ export default function VaccineParser() {
   const getPriorityColor = (category: string) => {
     switch (category) {
       case 'actionNeeded': return 'border-l-orange-500 bg-orange-50';
+      case 'upcoming': return 'border-l-blue-500 bg-blue-50';
       case 'complete': return 'border-l-emerald-500 bg-emerald-50';
-      case 'sharedDecision': return 'border-l-blue-500 bg-blue-50';
+      case 'sharedDecision': return 'border-l-indigo-500 bg-indigo-50';
       case 'riskBased': return 'border-l-purple-500 bg-purple-50';
       case 'international': return 'border-l-cyan-500 bg-cyan-50';
       case 'notRecommended': return 'border-l-gray-500 bg-gray-50';
@@ -256,12 +277,16 @@ export default function VaccineParser() {
                 className={`text-xs px-2 py-1 ${
                   rec.decisionType === 'international-advisory' ? 'bg-blue-100 text-blue-800' :
                   rec.decisionType === 'aged-out' ? 'bg-gray-100 text-gray-800' :
-                  rec.seriesComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800'
+                  rec.seriesComplete ? 'bg-emerald-100 text-emerald-800' : 
+                  category === 'upcoming' ? 'bg-blue-100 text-blue-800' :
+                  'bg-orange-100 text-orange-800'
                 }`}
               >
                 {rec.decisionType === 'international-advisory' ? 'International Advisory' :
                  rec.decisionType === 'aged-out' ? 'Aged Out' :
-                 rec.seriesComplete ? 'Complete' : 'Action Needed'}
+                 rec.seriesComplete ? 'Complete' : 
+                 category === 'upcoming' ? 'Upcoming' :
+                 'Action Needed'}
               </Badge>
             </div>
           </div>
@@ -1266,9 +1291,10 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
           const categories = categorizeVaccines(catchUpResult.recommendations);
           
           const filterOptions = [
-            { key: 'actionNeeded', label: 'Action Needed', count: categories.actionNeeded.length, color: 'red', icon: AlertTriangle },
+            { key: 'actionNeeded', label: 'Action Needed', count: categories.actionNeeded.length, color: 'orange', icon: AlertTriangle },
+            { key: 'upcoming', label: 'Upcoming', count: categories.upcoming.length, color: 'blue', icon: Calendar },
             { key: 'complete', label: 'Complete', count: categories.complete.length, color: 'emerald', icon: ShieldCheck },
-            { key: 'sharedDecision', label: 'Shared Decision', count: categories.sharedDecision.length, color: 'blue', icon: User },
+            { key: 'sharedDecision', label: 'Shared Decision', count: categories.sharedDecision.length, color: 'indigo', icon: User },
             { key: 'international', label: 'International', count: categories.international.length, color: 'cyan', icon: Globe },
             { key: 'notRecommended', label: 'Not Recommended', count: categories.notRecommended.length, color: 'gray', icon: AlertCircle },
           ];
@@ -1316,9 +1342,10 @@ Varicella (Chicken Pox)8/20/2012 (22 m.o.)2/18/2019 (8 y.o.)`}
                       onClick={() => setActiveFilter(isActive ? null : filter.key)}
                       className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         isActive
-                          ? filter.color === 'red' ? 'bg-red-100 text-red-800 ring-2 ring-red-500'
+                          ? filter.color === 'orange' ? 'bg-orange-100 text-orange-800 ring-2 ring-orange-500'
                           : filter.color === 'emerald' ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-500'
                           : filter.color === 'blue' ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-500'
+                          : filter.color === 'indigo' ? 'bg-indigo-100 text-indigo-800 ring-2 ring-indigo-500'
                           : filter.color === 'cyan' ? 'bg-cyan-100 text-cyan-800 ring-2 ring-cyan-500'
                           : 'bg-gray-100 text-gray-800 ring-2 ring-gray-500'
                           : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'

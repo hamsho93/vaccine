@@ -1,4 +1,4 @@
-import { VaccineDoseInfo, getAgeInMonths, getAgeInYears } from '../vaccine-catchup';
+import { VaccineDoseInfo, getAgeInMonths, getAgeInYears, addDays, formatDate } from '../vaccine-catchup';
 import type { VaccineRecommendation } from '../../../shared/schema';
 import { SpecialConditions } from '../vaccine-cdc-rules';
 
@@ -15,7 +15,7 @@ export function influenzaRecommendation(
   const doses = validDoses;
   let seriesComplete = false;
   let recommendation = '';
-  const nextDoseDate: string | undefined = undefined;
+  let nextDoseDate: string | undefined = undefined;
   const notes: string[] = [];
   const getCurrentSeason = (date: Date) => {
     const year = date.getFullYear();
@@ -29,6 +29,9 @@ export function influenzaRecommendation(
   if (currentAgeMonths < 6) {
     recommendation = 'Influenza vaccine not recommended under 6 months';
     notes.push('Minimum age: 6 months');
+    // Set next dose date for when child turns 6 months
+    const sixMonthsDate = addDays(birthDate, 6 * 30.44);
+    nextDoseDate = formatDate(sixMonthsDate);
   } else if (dosesThisSeason > 0) {
     recommendation = 'Influenza vaccine for current season already received';
     seriesComplete = true;
@@ -40,6 +43,19 @@ export function influenzaRecommendation(
         if (dosesThisSeason === 0) {
           recommendation = 'Give first influenza dose of season now';
           notes.push('First-time recipients <9 years need 2 doses, 4 weeks apart');
+        } else if (dosesThisSeason === 1) {
+          // Calculate next dose date (4 weeks after first dose of season)
+          const firstDoseThisSeason = doses.find(dose => getCurrentSeason(dose.date) === currentSeason);
+          if (firstDoseThisSeason) {
+            const nextDate = addDays(firstDoseThisSeason.date, 28);
+            if (currentDate >= nextDate) {
+              recommendation = 'Give second influenza dose now';
+            } else {
+              recommendation = `Give second influenza dose on or after ${formatDate(nextDate)}`;
+              nextDoseDate = formatDate(nextDate);
+            }
+            notes.push('Second dose needed 4 weeks after first dose');
+          }
         }
       } else {
         recommendation = 'Give annual influenza vaccine now';
