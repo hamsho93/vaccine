@@ -1,4 +1,4 @@
-import { VaccineDoseInfo, addDays, formatDate, getAgeInDays } from '../vaccine-catchup';
+import { VaccineDoseInfo, addDays, formatDate, getAgeInDays, getAgeInYears } from '../vaccine-catchup';
 import type { VaccineRecommendation } from '../../../shared/schema';
 import { SpecialConditions } from '../vaccine-cdc-rules';
 
@@ -53,16 +53,25 @@ export function ipvRecommendation(
     }
     notes.push('Minimum interval: 4 weeks between doses 2-3');
   } else if (numDoses === 3) {
-    const ageDate = addDays(birthDate, 4 * 365);
-    const intervalDate = addDays(sortedDoses[2].date, 183);
-    const nextDate = new Date(Math.max(ageDate.getTime(), intervalDate.getTime()));
-    if (currentDate >= nextDate) {
-      recommendation = 'Give polio (IPV) dose 4 now (final dose)';
+    // CDC exception: Dose 4 not needed if dose 3 was given at ≥4 years
+    const ageAtDose3Years = getAgeInYears(birthDate, sortedDoses[2].date);
+    if (ageAtDose3Years >= 4) {
+      recommendation = 'Polio (IPV) series complete (dose 4 not needed)';
+      seriesComplete = true;
+      notes.push('Dose 4 not necessary: dose 3 given at ≥4 years');
     } else {
-      recommendation = `Give polio (IPV) dose 4 on or after ${formatDate(nextDate)} (final dose)`;
-      nextDoseDate = formatDate(nextDate);
+      // Dose 4 is needed
+      const ageDate = addDays(birthDate, 4 * 365);
+      const intervalDate = addDays(sortedDoses[2].date, 183);
+      const nextDate = new Date(Math.max(ageDate.getTime(), intervalDate.getTime()));
+      if (currentDate >= nextDate) {
+        recommendation = 'Give polio (IPV) dose 4 now (final dose)';
+      } else {
+        recommendation = `Give polio (IPV) dose 4 on or after ${formatDate(nextDate)} (final dose)`;
+        nextDoseDate = formatDate(nextDate);
+      }
+      notes.push('Final dose: must be given at age 4+ years AND 6 months after dose 3');
     }
-    notes.push('Final dose: must be given at age 4+ years AND 6 months after dose 3');
   }
   return { vaccineName: normalizedName, recommendation, nextDoseDate, seriesComplete, notes };
 }
